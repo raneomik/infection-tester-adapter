@@ -57,19 +57,21 @@ jobs:
 
       - name: Run Infection
         run: make infection
-
-      - name: Run Stryker
-        uses: stryker-mutator/github-action@v0.0.1
-        with:
-            testProject: tests/phpunit
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      
+      # - name: Run Stryker
+      #   uses: stryker-mutator/github-action@v0.0.1
+      #   with:
+      #       testProject: tests/phpunit
+      #   env:
+      #     STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
-      - name: Upload Stryker report
-        uses: actions/upload-artifact@v6
-        with:
-            name: html-report
-            path: ${{github.workspace}}/var/**/*.html
+      # - name: Upload Stryker report
+      #   uses: actions/upload-artifact@v6
+      #   with:
+      #       name: html-report
+      #       path: ${{github.workspace}}/var/**/*.html
 
   # This is a meta job to avoid to have to constantly change the protection rules
   # whenever we touch the matrix.
