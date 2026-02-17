@@ -1,0 +1,85 @@
+# yamllint disable rule:line-length
+# yamllint disable rule:braces
+
+name: Mutation Testing
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  mutation-testing:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        operating-system: [ ubuntu-latest ]
+        php-version: [ '8.5' ]
+        coverage-driver: [ pcov ]
+
+    name: Mutation testing with PHP ${{ matrix.php-version }} (${{ matrix.coverage-driver }})
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: ${{ matrix.coverage-driver }}
+          tools: composer:v2
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache dependencies
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ matrix.php-version }}-${{ hashFiles('composer.*') }}
+          restore-keys: |
+            composer-${{ runner.os }}-${{ matrix.php-version }}-
+            composer-${{ runner.os }}-
+            composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run Infection
+        run: make infection
+
+      - name: Run Stryker
+        uses: stryker-mutator/github-action@v0.0.1
+        with:
+            testProject: tests/phpunit
+
+      - name: Upload Stryker report
+        uses: actions/upload-artifact@v3
+        with:
+            name: html-report
+            path: ${{github.workspace}}/var/**/*.html
+
+  # This is a meta job to avoid to have to constantly change the protection rules
+  # whenever we touch the matrix.
+  tests-status:
+    name: MutationTesting Status
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: mutation-testing
+    if: always()
+    steps:
+      - name: Successful run
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: exit 0
+
+      - name: Failing run
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1

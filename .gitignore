@@ -1,0 +1,12 @@
+!/.tools/.gitkeep
+!/tests/e2e/*/var/.gitkeep
+.phpunit.result.cache
+/.composer/
+/.idea
+/.php-cs-fixer.cache
+/.tools/
+/build/
+/infection.log
+/tests/e2e/*/var/
+/var/
+/vendor/

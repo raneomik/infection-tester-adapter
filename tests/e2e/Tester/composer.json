@@ -1,0 +1,53 @@
+{
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../../..",
+      "options": {
+        "symlink": false
+      }
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    },
+    "files": [
+      "src/Covered/functions.php",
+      "src/Uncovered/functions.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "App\\Tests\\": "tests/"
+    }
+  },
+  "require": {
+    "php": "^8.2",
+    "ext-dom": "*",
+    "infection/infection": "@dev",
+    "raneomik/infection-tester-adapter": "@dev",
+    "nette/tester": "@dev"
+  },
+  "config": {
+    "allow-plugins": {
+      "infection/extension-installer": true
+    },
+    "sort-packages": true,
+    "optimize-autoloader": true
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "@link-sources"
+    ],
+    "post-update-cmd": [
+      "@link-sources"
+    ],
+    "link-sources": [
+      "rm -rf vendor/raneomik/infection-tester-adapter/src",
+      "cd vendor/raneomik/infection-tester-adapter && ln -sf ../../../../../../src src"
+    ]
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

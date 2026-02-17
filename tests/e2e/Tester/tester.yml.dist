@@ -1,0 +1,8 @@
+# Tester configuration file
+# Tester uses "convention over configuration" and doesn't require configuration.
+# This file exists only to satisfy Infection's config file check.
+#
+# Tests are automatically discovered in: tests/
+# Bootstrap file: tests/bootstrap.php
+# Test patterns: *Test.php, *.phpt
+

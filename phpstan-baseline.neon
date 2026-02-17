@@ -1,0 +1,10 @@
+parameters:
+	ignoreErrors:
+		-
+			identifier: ternary.shortNotAllowed
+
+		-
+			message: "#^Parameter \\#7 \\$sourceDirectories \\(array\\<string\\>\\) of method Raneomik\\\\InfectionTestFramework\\\\Tester\\\\TesterAdapterFactory\\:\\:create\\(\\) should be contravariant with parameter \\$sourceDirectories \\(array\\) of method Infection\\\\AbstractTestFramework\\\\TestFrameworkAdapterFactory\\:\\:create\\(\\)$#"
+			identifier: method.childParameterType
+			count: 1
+			path: src/TesterAdapterFactory.php

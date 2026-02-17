@@ -1,0 +1,9 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    paths:
+        - src
+    tmpDir: var/phpstan-cache
+    level: max
+    inferPrivatePropertyTypeFromConstructor: true
