@@ -1,12 +1,15 @@
 graph TB
     Project["Any project that uses Infection"]
     Adapter["raneomik/infection-tester-adapter"]
+    Formatter["raneomik/infection-tester-adapter#CoverageMerger"]
     Infection["infection/infection"]
     AbstractAdapter["infection/abstract-testframework-adapter<br/>TestFrameworkAdapter"]
     OtherAdapters["Other test framework adapters<br/>..."]
 
     Project --> Infection
     Project -.-> Adapter
+    Adapter -.-> Formatter
+    Formatter -.-> Adapter
     Infection --> AbstractAdapter
     Infection --> OtherAdapters
     Adapter --> AbstractAdapter

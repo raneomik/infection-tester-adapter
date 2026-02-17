@@ -1,11 +1,11 @@
 # Tester Test Framework Adapter for Infection
 
-> *Disclaimer: AI agent experiment - chat-gpt5.2 & claude sonnet 4.5 wrote ~60-75% or more of this project, by my lack of knowledge on this topic and lack of time to learn...
->But I thought it would be interesting to ask AI "Hey, I discovered [this framework][nette], and it comes with its [own testing framework][tester]. But I love Infection and its metrics to push you to test your tests, and feel quite sorry it does not support it yet... Are we in ? - yes, Here's your code"
-> (it wasn't this simple, [here's some copilot's very verbose journals & reports](docs/copilot-report) for french speakers - it's a real mess, sorry, all dev problems seem to be included).
+> *Disclaimer: AI agent experiment - chat-gpt5.2 & claude sonnet 4.5 wrote ~60-75% of this project, by my lack of knowledge on this topic and lack of time to learn...
+>I thought it would be interesting to ask AI "Hey, I discovered [this framework][nette], and it comes with its [own testing framework][tester]. But I love Infection and its metrics to push you to test your tests, and feel quite sorry it does not support it yet... Are we in ? - yes, Here's your code"
+> (it wasn't this simple, [here's some copilot's very verbose journals & reports](docs/copilot-report) for french speakers - it's a real mess, sorry, all dev problems seem to be included)
 > and share the result.
-The remaining ~30% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big Shoutout to Maks Rafalko & Infection community.
-.*
+>
+> The remaining ~30% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big Shoutout to Maks Rafalko & Infection community for this amazing tool
 
 This package provides the test framework adapter of [Tester][tester] for [infection][infection].
 
@@ -60,7 +60,6 @@ Contributions are welcome! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md)
 ## License
 
 This project is licensed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
-
 
 [infection]: https://infection.github.io
 [infection-configuration-docs]: https://infection.github.io/guide/usage.html#Configuration
