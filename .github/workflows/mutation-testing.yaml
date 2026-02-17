@@ -60,6 +60,8 @@ jobs:
         uses: stryker-mutator/github-action@v0.0.1
         with:
             testProject: tests/phpunit
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
       - name: Upload Stryker report
         uses: actions/upload-artifact@v6
