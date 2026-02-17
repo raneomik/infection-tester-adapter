@@ -1,13 +1,13 @@
 # Tester Test Framework Adapter for Infection
 
-> *Disclaimer: AI agent experiment - chat-gpt5.2 & claude sonnet 4.5 wrote ~60-75% of this project, by my lack of knowledge on this topic and lack of time to learn...
->I thought it would be interesting to ask AI "Hey, I discovered [this framework][nette], and it comes with its [own testing framework][tester]. But I love Infection and its metrics to push you to test your tests, and feel quite sorry it does not support it yet... Are we in ? - yes, Here's your code"
-> (it wasn't this simple, [here's some copilot's very verbose journals & reports](docs/copilot-report) for french speakers - it's a real mess, sorry, all dev problems seem to be included)
-> and share the result.
+> _Disclaimer: AI agent experiment - chat-gpt5.2 & claude sonnet 4.5 wrote ~60-75% of this project, by my lack of knowledge on this topic and lack of time to learn..._
+> _I thought it would be interesting to ask AI "Hey, I discovered [this framework][nette], and it comes with its [own testing framework][tester]. But I love Infection and its metrics to push you to test your tests, and feel quite sorry it does not support it yet... Are we in ? - yes, Here's your code"_
+> _(it wasn't this simple, [here's some copilot's very verbose journals & reports](docs/copilot-report) for french speakers - it's a real mess, sorry, all dev problems seem to be included)_
+> _and share the result._
 >
-> The remaining ~30% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big Shoutout to Maks Rafalko & Infection community for this amazing tool
+> _The remaining ~30% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big Shoutout to Maks Rafalko & Infection community for this amazing tool_
 
-This package provides the test framework adapter of [Tester][tester] for [infection][infection].
+This package provides test framework adapter of [Tester][tester] for [infection][infection].
 
 ![Architecture](./docs/tester-adapter.png)
 
@@ -39,10 +39,8 @@ Infection will automatically detect and use the [Tester][tester] adapter when it
 
 This adapter should work directly with your existing Tester tests, with limitations :
 
-- Tester provides jUnit.xml and Clover.xml coverage reports, but in a lighter format than the phpunit namespaced expected by Infection.
-So it is NOT recomended to use `--skip-initial-tests` with `--coverage` options (it just results in xpath read/FQCN error).
-This adapter embeds transformation of those reports during the mutation process,.
-- [Test cases](https://tester.nette.org/en/testcase) are encouraged for better report result
+- Tester provides jUnit.xml and Clover.xml coverage reports, but Infection expects a more complete phpunit report. This adapter embeds transformation of Testers' reports during the mutation process, so it is NOT recomended to use `--skip-initial-tests` with `--coverage` options (it just results in xpath read/FQCN error, unless you are using a script which does the needed trasformation).
+- [Test cases](https://tester.nette.org/en/testcase) are recombed for better report result
 - other forms of tests are supported, but need namespaces to be identified by Infection and referenced in report as covering code.
 
 No additional configuration, following Tester's "Convention over configuration" principle.
