@@ -57,6 +57,7 @@ final readonly class InitialTestRunner
         private string $coverageFragmentDir,
         private string $tmpDir,
         private string $tmpJunitPath,
+        private CoverageMerger $coverageMerger,
     ) {
     }
 
@@ -88,7 +89,13 @@ final readonly class InitialTestRunner
         string $tmpDir,
         string $tmpJunitPath,
     ): int {
-        $runner = new self($commandParts, $coverageFragmentDir, $tmpDir, $tmpJunitPath);
+        $runner = new self(
+            $commandParts,
+            $coverageFragmentDir,
+            $tmpDir,
+            $tmpJunitPath,
+            new CoverageMerger(),
+        );
 
         return $runner->run();
     }
@@ -113,14 +120,14 @@ final readonly class InitialTestRunner
     private function mergeCoverageFragments(): void
     {
         try {
-            CoverageMerger::merge(
+            $this->coverageMerger->merge(
                 $this->coverageFragmentDir,
                 $this->tmpDir,
                 $this->tmpJunitPath
             );
-        } catch (Throwable $e) {
+        } catch (Throwable $throwable) {
             // Log error but don't fail (coverage mapping is non-critical)
-            fwrite(STDERR, PHP_EOL . '⚠️  Coverage test failed: ' . $e->getMessage() . PHP_EOL);
+            fwrite(STDERR, PHP_EOL . '⚠️  Coverage test failed: ' . $throwable->getMessage() . PHP_EOL);
         }
     }
 }

@@ -38,9 +38,11 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester\Adapter;
 
 use Infection\AbstractTestFramework\InvalidVersion;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\VersionParser;
 
+#[Group('unit')]
 final class VersionParserTest extends TestCase
 {
     private VersionParser $versionParser;

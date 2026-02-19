@@ -38,96 +38,63 @@ namespace Raneomik\InfectionTestFramework\Tester\Command;
 
 use function array_filter;
 use function array_merge;
-use function is_executable;
-use const PHP_SAPI;
 use RuntimeException;
-use function shell_exec;
-use function substr;
 use Symfony\Component\Process\PhpExecutableFinder;
 
 /**
- * @internal
+ * Builds command line for Tester test framework.
+ *
+ * Uses Tester's native options:
+ * - `-p <path>` to specify PHP interpreter
+ * - `-d <key=value>` to define INI entries
  */
 final class CommandLineBuilder
 {
     /**
-     * @var string[]|null
-     */
-    private ?array $cachedPhpCmdLine = null;
-
-    /**
-     * @param string[] $frameworkArgs
-     * @param string[] $phpExtraArgs
+     * Build command line for Tester.
+     *
+     * @param string[] $phpExtraArgs PHP INI options (will be converted to Tester -d options)
+     * @param string[] $frameworkArgs Tester framework arguments
      *
      * @return string[]
      */
     public function build(string $testFrameworkExecutable, array $phpExtraArgs, array $frameworkArgs): array
     {
-        if ($this->isBatchFile($testFrameworkExecutable)) {
-            return array_merge([$testFrameworkExecutable], $frameworkArgs);
+        $phpExtraArgs = $this->cleanup($phpExtraArgs);
+        $frameworkArgs = $this->cleanup($frameworkArgs);
+
+        $command = [$testFrameworkExecutable];
+
+        if ([] !== $phpExtraArgs) {
+            $command[] = '-p';
+            $command[] = $this->findPhp();
         }
 
-        /*
-         * That's an empty options list by all means, we need to see it as such
-         */
-        $phpExtraArgs = array_filter($phpExtraArgs, static fn (string $value): bool => '' !== $value);
-
-        /*
-         * Run an executable as it is if we're using a standard CLI and
-         * there's a standard interpreter available on PATH.
-         *
-         * This lets folks use, say, a bash wrapper over phpunit.
-         */
-        if (
-            'cli' === PHP_SAPI
-            && [] === $phpExtraArgs
-            && is_executable($testFrameworkExecutable)
-            && null !== shell_exec('command -v php')
-        ) {
-            return array_merge([$testFrameworkExecutable], $frameworkArgs);
-        }
-
-        /*
-         * In all other cases run it with a chosen PHP interpreter
-         */
-        $commandLineArgs = array_merge(
-            $this->findPhp(),
-            $phpExtraArgs,
-            [$testFrameworkExecutable],
-            $frameworkArgs,
-        );
-
-        return array_filter($commandLineArgs, static fn (string $value): bool => '' !== $value);
+        // Merge all arguments
+        return array_merge($command, $phpExtraArgs, $frameworkArgs);
     }
 
     /**
-     * @return string[]
+     * Find PHP executable.
      */
-    private function findPhp(): array
+    private function findPhp(): string
     {
-        if (null === $this->cachedPhpCmdLine) {
-            $phpExec = (new PhpExecutableFinder())->find(false);
+        $phpExec = (new PhpExecutableFinder())->find(false);
 
-            if (false === $phpExec) {
-                throw new RuntimeException('PHP executable not found');
-            }
-
-            $phpCmd = [];
-
-            $phpCmd[] = $phpExec;
-
-            if (PHP_SAPI === 'phpdbg') {
-                $phpCmd[] = '-qrr';
-            }
-
-            $this->cachedPhpCmdLine = $phpCmd;
+        if (false === $phpExec) {
+            throw new RuntimeException('PHP executable not found');
         }
 
-        return $this->cachedPhpCmdLine;
+        return $phpExec;
     }
 
-    private function isBatchFile(string $path): bool
+    /**
+     * @param string[] $input
+     *
+     * @return string[]
+     */
+    private function cleanup(array $input): array
     {
-        return '.bat' === substr($path, -4);
+        return array_filter($input, static fn (string $value): bool => '' !== $value);
     }
 }

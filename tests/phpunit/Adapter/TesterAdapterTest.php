@@ -36,14 +36,16 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Adapter;
 
-use function file_get_contents;
+use function dirname;
 use function implode;
+use Infection\AbstractTestFramework\Coverage\TestLocation;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandScriptBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilder;
-use Raneomik\InfectionTestFramework\Tester\Config\MutationConfigBuilderFactory;
+use Raneomik\InfectionTestFramework\Tester\Config\MutationConfigBuilder;
+use Raneomik\InfectionTestFramework\Tester\Coverage\PrependScriptGenerator;
 use Raneomik\InfectionTestFramework\Tester\TesterAdapter;
 use Raneomik\InfectionTestFramework\Tester\VersionParser;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
@@ -61,6 +63,7 @@ final class TesterAdapterTest extends FileSystemTestCase
     private const ORIGINAL_FILE_PATH = '/original/file/path';
 
     private const MUTATED_FILE_PATH = '/mutated/file/path';
+
     private string $pathToProject;
 
     protected function setUp(): void
@@ -68,23 +71,6 @@ final class TesterAdapterTest extends FileSystemTestCase
         parent::setUp();
 
         $this->pathToProject = p((string) realpath(__DIR__ . '/../Fixtures/Files/tester'));
-    }
-
-    public function test_it_has_a_name(): void
-    {
-        $adapter = $this->createAdapter();
-        self::assertSame('tester', $adapter->getName());
-    }
-
-    #[DataProvider('passProvider')]
-    public function test_it_determines_whether_tests_pass_or_not(
-        string $output,
-        bool $expectedResult,
-    ): void {
-        $adapter = $this->createAdapter();
-        $result = $adapter->testsPass($output);
-
-        self::assertSame($expectedResult, $result);
     }
 
     /**
@@ -100,111 +86,114 @@ final class TesterAdapterTest extends FileSystemTestCase
 
         yield ['warnings!', true];
 
+        yield ['warnings!', true];
+
         yield ['FAILURES!', false];
+
+        yield ['FaIlUrEs!', false];
 
         yield ['failures!', false];
 
         yield ['ERRORS!', false];
+
+        yield ['ErRoRs!', false];
 
         yield ['errors!', false];
 
         yield ['unhandled string', false];
     }
 
+    #[DataProvider('passProvider')]
+    public function test_it_determines_whether_tests_pass_or_not(
+        string $output,
+        bool $expectedResult,
+    ): void {
+        $testerAdapter = $this->createAdapter();
+        $result = $testerAdapter->testsPass($output);
+
+        self::assertSame($expectedResult, $result);
+    }
+
+    public function test_it_has_a_name(): void
+    {
+        $testerAdapter = $this->createAdapter();
+        self::assertSame('tester', $testerAdapter->getName());
+    }
+
+    public function test_it_shows_version(): void
+    {
+        $testerAdapter = $this->createAdapter(null);
+        self::assertSame('2.6.0', $testerAdapter->getVersion());
+    }
+
     public function test_it_does_nothing_on_skip_init(): void
     {
-        $adapter = $this->createAdapter();
-        $commandLine = $adapter->getInitialTestRunCommandLine('', [], true);
+        $testerAdapter = $this->createAdapter();
+        $commandLine = $testerAdapter->getInitialTestRunCommandLine('', [], true);
 
         self::assertEmpty($commandLine);
     }
 
     public function test_it_sets_initial_script(): void
     {
-        $adapter = $this->createAdapter();
-        $commandLine = $adapter->getInitialTestRunCommandLine('', [], false);
+        $testerAdapter = $this->createAdapter();
+        $commandLine = $testerAdapter->getInitialTestRunCommandLine('blabla', [], false);
 
         self::assertContains($initScript = $this->tmp . '/run-initial-tester.php', $commandLine);
+        self::asserFileContains('blabla', $initScript);
         self::assertFileExists($initScript);
-    }
-
-    public function test_it_adds_extra_options_for_mutant_command_line(): void
-    {
-        $adapter = $this->createAdapter();
-        $commandLine = $adapter->getMutantCommandLine(
-            [],
-            self::MUTATED_FILE_PATH,
-            self::MUTATION_HASH,
-            self::ORIGINAL_FILE_PATH,
-            '--filter=xyz',
-        );
-
-        self::assertContains('--filter=xyz', $commandLine);
     }
 
     public function test_it_creates_interceptor_file(): void
     {
-        $adapter = $this->createAdapter();
+        $testerAdapter = $this->createAdapter();
 
-        $adapter->getMutantCommandLine(
+        $testerAdapter->getMutantCommandLine(
             [],
             self::MUTATED_FILE_PATH,
             self::MUTATION_HASH,
             self::ORIGINAL_FILE_PATH,
-            '',
         );
 
         $expectedConfigPath = $this->tmp . '/bootstrap-mutant-a1b2c3.php';
 
         self::assertFileExists($expectedConfigPath);
+
+        self::asserFileContains(dirname(__DIR__, 3) . '/vendor/autoload.php', $expectedConfigPath);
+        self::asserFileContains(self::ORIGINAL_FILE_PATH, $expectedConfigPath);
+        self::asserFileContains(self::MUTATED_FILE_PATH, $expectedConfigPath);
     }
 
-    public function test_adds_original_bootstrap_to_the_created_config_file_with_relative_path(): void
+    public function test_mutant_cmd_line(): void
     {
-        $adapter = $this->createAdapter();
+        $testerAdapter = $this->createAdapter();
 
-        $adapter->getMutantCommandLine(
-            [],
+        $cmd = $testerAdapter->getMutantCommandLine(
+            [
+                new TestLocation('test', '/path/to/test', null),
+                new TestLocation('anotherTest', '/path/to/test', null),
+            ],
             self::MUTATED_FILE_PATH,
             self::MUTATION_HASH,
             self::ORIGINAL_FILE_PATH,
-            '',
         );
 
-        self::assertStringContainsString(
-            'tests/bootstrap.php',
-            (string) @file_get_contents($this->tmp . '/bootstrap-mutant-a1b2c3.php'),
-        );
+        $inlineCmd = implode(' ', $cmd);
+
+        self::assertStringContainsString('vendor/bin/tester', $inlineCmd);
+        self::assertStringContainsString('-p /usr/bin/php', $inlineCmd);
+        self::assertStringContainsString('-d pcov.enabled=1', $inlineCmd);
+        self::assertStringContainsString('-d pcov.directory', $inlineCmd);
+        self::assertStringContainsString('-d auto_prepend_file', $inlineCmd);
+        self::assertStringContainsString('-j 1 -o junit', $inlineCmd);
+        self::assertStringContainsString('/path/to/test', $inlineCmd);
     }
 
     public function test_it_has_junit_report(): void
     {
-        $adapter = $this->createAdapter();
+        $testerAdapter = $this->createAdapter();
 
-        self::assertTrue($adapter->hasJUnitReport(), 'Tester Framework must have JUnit report');
-    }
-
-    public function test_tester_name(): void
-    {
-        self::assertSame('tester', $this->createAdapter()->getName());
-    }
-
-    public function test_prepare_arguments_and_options_contains_run_first(): void
-    {
-        $adapter = $this->createAdapter();
-
-        $commandLine = $adapter->getMutantCommandLine(
-            [],
-            self::MUTATED_FILE_PATH,
-            self::MUTATION_HASH,
-            self::ORIGINAL_FILE_PATH,
-            '--skip blah',
-        );
-
-        self::assertStringContainsString(
-            'path/to/tester --skip blah',
-            implode(' ', $commandLine),
-        );
+        self::assertTrue($testerAdapter->hasJUnitReport(), 'Tester Framework must have JUnit report');
     }
 
     private function createAdapter(?string $version = 'unknown'): TesterAdapter
@@ -213,13 +202,6 @@ final class TesterAdapterTest extends FileSystemTestCase
 
         $filesystem = new Filesystem();
 
-        // Create the mutation config builder factory (dependency of TesterAdapter)
-        $mutationConfigBuilderFactory = new MutationConfigBuilderFactory(
-            $this->tmp,
-            $this->pathToProject,
-        );
-
-        // Create the initial test run command builder (dependency of TesterAdapter)
         $commandScriptBuilder = new CommandScriptBuilder(
             ['src'],
             $this->tmp,
@@ -227,28 +209,32 @@ final class TesterAdapterTest extends FileSystemTestCase
             Path::makeRelative($jUnitFilePath, $this->tmp),
             $filesystem,
             new CommandLineBuilder(),
+            new PrependScriptGenerator(),
         );
 
         $initialTestRunCommandBuilder = new InitialTestRunCommandBuilder(
             $commandScriptBuilder
         );
 
-        $adapter = new TesterAdapter(
+        $testerAdapter = new TesterAdapter(
             'tester',
-            '/path/to/tester',
+            'vendor/bin/tester',
             ['projectSrc/dir'],
             new Filesystem(),
             new VersionParser('Tester'),
             new CommandLineBuilder(),
             $initialTestRunCommandBuilder,
-            $mutationConfigBuilderFactory->create(),
+            new MutationConfigBuilder(
+                $this->tmp,
+                $this->pathToProject,
+            ),
         );
 
         if (null !== $version) {
-            $reflection = new ReflectionProperty($adapter, 'cachedVersion');
-            $reflection->setValue($adapter, $version);
+            $reflectionProperty = new ReflectionProperty($testerAdapter, 'cachedVersion');
+            $reflectionProperty->setValue($testerAdapter, $version);
         }
 
-        return $adapter;
+        return $testerAdapter;
     }
 }

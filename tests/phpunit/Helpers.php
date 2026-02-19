@@ -66,11 +66,10 @@ function normalizePath(string $value): string
  */
 function make_tmp_dir(string $namespace, string $className): string
 {
-    if (($pos = strrpos($className, '\\')) !== false) {
-        $shortClass = substr($className, $pos + 1);
-    } else {
-        $shortClass = $className;
-    }
+    $shortClass = false !== ($pos = strrpos($className, '\\'))
+        ? substr($className, $pos + 1)
+        : $className
+    ;
 
     // Usage of realpath() is important if the temporary directory is a
     // symlink to another directory (e.g. /var => /private/var on some Macs)

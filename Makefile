@@ -32,7 +32,12 @@ INFECTION_ARGS=--min-msi=$(MIN_MSI) --min-covered-msi=$(MIN_COVERED_MSI) --threa
 
 .PHONY: all
 all:	 ## Executes all checks
-all: cs test phpstan
+all: rector cs test
+
+.PHONY: rector
+rector:	 ## Apply Rector fixes
+rector: vendor/autoload.php
+	@vendor/bin/rector
 
 .PHONY: cs
 cs:	 ## Apply CS fixes

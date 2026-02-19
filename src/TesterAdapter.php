@@ -38,7 +38,6 @@ namespace Raneomik\InfectionTestFramework\Tester;
 
 use function array_filter;
 use function explode;
-use function file_put_contents;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
 use Infection\AbstractTestFramework\TestFrameworkAdapter;
 use function preg_match;
@@ -128,10 +127,8 @@ final class TesterAdapter implements TestFrameworkAdapter
         string $mutatedFilePath,
         string $mutationHash,
         string $mutationOriginalFilePath,
-        string $extraOptions,
+        string $extraOptions = '',
     ): array {
-        $baseArguments = $this->prepareArgumentsAndOptions($extraOptions);
-
         $outputDir = $this->mutationConfigBuilder->createOutputDirectory($mutationHash);
         $this->filesystem->mkdir($outputDir);
 
@@ -141,19 +138,18 @@ final class TesterAdapter implements TestFrameworkAdapter
             $mutatedFilePath,
         );
 
-        file_put_contents($bootstrap['path'], $bootstrap['content']);
+        $this->filesystem->dumpFile($bootstrap['path'], $bootstrap['content']);
 
         $testerArgs = $this->mutationConfigBuilder->buildMutantArguments(
-            $baseArguments,
-            $bootstrap['path'],
-            $outputDir
+            $outputDir,
+            $coverageTests,
         );
 
-        $phpExtraArgs = $this->mutationConfigBuilder->buildPhpExtraArgs($this->srcDirs);
+        $extraArgs = $this->mutationConfigBuilder->buildExtraArgs($this->srcDirs, $bootstrap['path']);
 
         return $this->commandLineBuilder->build(
             $this->testFrameworkExecutable,
-            $phpExtraArgs,
+            $extraArgs,
             $testerArgs
         );
     }

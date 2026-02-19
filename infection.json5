@@ -1,5 +1,4 @@
 {
-    "tmpDir": "var/infection",
     "source": {
         "directories": [
             "src"

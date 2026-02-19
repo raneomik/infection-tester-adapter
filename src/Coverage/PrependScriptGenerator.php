@@ -36,20 +36,23 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
-use function chmod;
 use function dirname;
-use function file_put_contents;
-use function is_dir;
 use function is_file;
-use function mkdir;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\AutoPrependTemplate;
 use function rtrim;
+use RuntimeException;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Generates coverage_prepend scripts for coverage collection.
  */
-final class CoverageScriptGenerator
+final readonly class PrependScriptGenerator
 {
+    public function __construct(
+        private Filesystem $filesystem = new Filesystem(),
+    ) {
+    }
+
     /**
      * Prepare the coverage_prepend script for coverage collection.
      *
@@ -60,19 +63,16 @@ final class CoverageScriptGenerator
      *
      * @return array{script: string, autoload: string|null}
      */
-    public static function generate(
+    public function generate(
         string $projectDir,
         string $tmpDir,
         array $srcDirs,
         string $fragmentDir,
     ): array {
-        self::ensureDir($tmpDir);
-        self::ensureDir($fragmentDir);
-
-        $autoload = self::findAutoload($projectDir);
+        $autoload = $this->findAutoload($projectDir);
         $scriptPath = $tmpDir . '/coverage_prepend.php';
 
-        self::writeScript($scriptPath, $autoload, $fragmentDir, $srcDirs);
+        $this->writeScript($scriptPath, $autoload, $fragmentDir, $srcDirs);
 
         return [
             'script' => $scriptPath,
@@ -84,7 +84,7 @@ final class CoverageScriptGenerator
      * Find the Composer autoload.php file.
      * Walks up the directory tree until finding vendor/autoload.php.
      */
-    private static function findAutoload(string $projectDir): ?string
+    private function findAutoload(string $projectDir): string
     {
         $dir = rtrim($projectDir, '/');
 
@@ -104,17 +104,7 @@ final class CoverageScriptGenerator
             $dir = $parent;
         }
 
-        return null;
-    }
-
-    /**
-     * Ensure directories exist.
-     */
-    private static function ensureDir(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0777, true);
-        }
+        throw new RuntimeException('Could not find Composer autoload.php');
     }
 
     /**
@@ -122,7 +112,7 @@ final class CoverageScriptGenerator
      *
      * @param string[] $srcDirs
      */
-    private static function writeScript(
+    private function writeScript(
         string $scriptPath,
         ?string $autoload,
         string $fragmentDir,
@@ -130,7 +120,7 @@ final class CoverageScriptGenerator
     ): void {
         $content = AutoPrependTemplate::build($autoload, $fragmentDir, $srcDirs);
 
-        file_put_contents($scriptPath, $content);
-        @chmod($scriptPath, 0644);
+        $this->filesystem->dumpFile($scriptPath, $content);
+        $this->filesystem->chmod($scriptPath, 0644);
     }
 }

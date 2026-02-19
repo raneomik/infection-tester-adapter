@@ -26,6 +26,7 @@ class UserServiceTest extends TestCase
         $service = new UserService();
         Assert::false($service->addUser('', 'john@example.com'));
         Assert::same(0, $service->getUserCount());
+        Assert::contains('Failed to add user: empty name or email', $service->getLogs());
     }
 
     public function testAddUserWithEmptyEmail(): void
@@ -33,6 +34,8 @@ class UserServiceTest extends TestCase
         $service = new UserService();
         Assert::false($service->addUser('John Doe', ''));
         Assert::same(0, $service->getUserCount());
+        Assert::contains('Failed to add user: empty name or email', $service->getLogs());
+
     }
 
     public function testAddDuplicateUser(): void
@@ -41,6 +44,7 @@ class UserServiceTest extends TestCase
         $service->addUser('John Doe', 'john@example.com');
         Assert::false($service->addUser('Jane Doe', 'john@example.com'));
         Assert::same(1, $service->getUserCount());
+        Assert::contains('Failed to add user: email john@example.com already exists', $service->getLogs());
     }
 
     public function testRemoveUser(): void
@@ -51,6 +55,7 @@ class UserServiceTest extends TestCase
         Assert::same(0, $service->getUserCount());
         Assert::false($service->removeUser('john@example.com'));
         Assert::same(0, $service->getUserCount());
+        Assert::contains('Failed to remove user: email john@example.com not found', $service->getLogs());
     }
 
     public function testRemoveNonExistentUser(): void
@@ -75,7 +80,7 @@ class UserServiceTest extends TestCase
         Assert::null($service->getUser('john@example.com'));
     }
 
-    public function testUserExists()
+    public function testUserExists(): void
     {
         $service = new UserService();
         $service->addUser('John Doe', 'john@example.com');

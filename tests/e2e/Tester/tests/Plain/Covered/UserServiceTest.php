@@ -19,17 +19,20 @@ Assert::false($service->userExists('jane@example.com'));
 
 Assert::false($service->addUser('', 'john@example.com'));
 Assert::same(1, $service->getUserCount());
+Assert::contains('Failed to add user: empty name or email', $service->getLogs());
 
 Assert::false($service->addUser('John Doe', ''));
 Assert::same(1, $service->getUserCount());
 
 Assert::false($service->addUser('Jane Doe', 'john@example.com'));
 Assert::same(1, $service->getUserCount());
+Assert::contains('Failed to add user: email john@example.com already exists', $service->getLogs());
 
 Assert::true($service->removeUser('john@example.com'));
 Assert::same(0, $service->getUserCount());
 Assert::false($service->removeUser('john@example.com'));
 Assert::same(0, $service->getUserCount());
+Assert::contains('Failed to remove user: email john@example.com not found', $service->getLogs());
 
 $service->addUser('John Doe', 'john@example.com');
 $user = $service->getUser('john@example.com');

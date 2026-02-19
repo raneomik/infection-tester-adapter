@@ -37,8 +37,7 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Command;
 
 use function array_map;
-use function chmod;
-use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageScriptGenerator;
+use Raneomik\InfectionTestFramework\Tester\Coverage\PrependScriptGenerator;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\InitialTestRunTemplate;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\SetupScriptTemplate;
 use function rtrim;
@@ -50,71 +49,55 @@ use function trim;
  * Builder for initial test run command.
  * Encapsulates all logic for preparing coverage collection and test execution.
  */
-final readonly class CommandScriptBuilder
+final class CommandScriptBuilder
 {
     /** @var string[] */
-    private array $absoluteSrcDirs;
-    private string $coverageFragmentDir;
+    private readonly array $absoluteSrcDirs;
+
+    private readonly string $coverageFragmentDir;
+
+    /**
+     * @var array{
+     *       script: string,
+     *       autoload: ?string
+     *   }|null
+     */
+    private ?array $coverageScriptParts = null;
 
     /**
      * @param string[] $srcDirs
      */
     public function __construct(
         array $srcDirs,
-        private string $tmpDir,
-        private string $projectDir,
-        private string $jUnitFilePath,
-        private Filesystem $filesystem,
-        private CommandLineBuilder $commandLineBuilder,
+        private readonly string $tmpDir,
+        private readonly string $projectDir,
+        private readonly string $jUnitFilePath,
+        private readonly Filesystem $filesystem,
+        private readonly CommandLineBuilder $commandLineBuilder,
+        private readonly PrependScriptGenerator $coverageScriptGenerator,
     ) {
         $this->absoluteSrcDirs = $this->prepareSrcDirs($srcDirs);
         $this->coverageFragmentDir = sprintf('%s/coverage-fragments', $this->tmpDir);
-    }
 
-    /**
-     * Generate prepend script for coverage collection
-     *
-     * @return array{script: string, autoload: ?string}
-     */
-    public function buildCoverageScript(): array
-    {
-        return CoverageScriptGenerator::generate(
-            $this->projectDir,
-            $this->tmpDir,
-            $this->absoluteSrcDirs,
-            $this->coverageFragmentDir,
-        );
-    }
-
-    /**
-     * @param array{autoload: ?string, script: ?string} $coverageScriptData
-     */
-    public function getCoverageAutoloadPath(array $coverageScriptData): string
-    {
-        return $coverageScriptData['autoload'] ?? $this->projectDir . '/vendor/autoload.php';
+        $this->filesystem->mkdir($this->coverageFragmentDir);
     }
 
     /**
      * Generate the Tester setup script.
      *
-     * @param array{
-     *      script: string,
-     *      autoload: ?string
-     *  } $coverageScriptData
-     *
      * @return string Path to the generated setup script
      */
-    public function buildSetupScript(array $coverageScriptData): string
+    public function buildSetupScript(): string
     {
         $scriptContent = SetupScriptTemplate::build(
-            $this->getCoverageAutoloadPath($coverageScriptData),
-            $coverageScriptData['script'],
+            $this->getCoverageAutoloadPath(),
+            $this->getCoverageScript(),
             $this->absoluteSrcDirs[0] ?? ''
         );
-        $scriptPath = sprintf('%s/tester_setup.php', $this->tmpDir);
+        $scriptPath = sprintf('%s/tester-setup.php', $this->tmpDir);
 
         $this->filesystem->dumpFile($scriptPath, $scriptContent);
-        @chmod($scriptPath, 0755);
+        $this->filesystem->chmod($scriptPath, 0755);
 
         return $scriptPath;
     }
@@ -124,16 +107,11 @@ final readonly class CommandScriptBuilder
      *
      * @param string[] $frameworkArgs
      * @param string[] $phpExtraArgs
-     * @param array{
-     *     script: string,
-     *     autoload: ?string
-     * } $coverageScriptData
      */
     public function buildInitialTestWrapper(
         string $testFrameworkExecutable,
-        array $frameworkArgs,
-        array $phpExtraArgs,
-        array $coverageScriptData,
+        array $phpExtraArgs = [],
+        array $frameworkArgs = [],
     ): string {
         // Build command using CommandLineBuilder
         $commandParts = $this->commandLineBuilder->build(
@@ -144,7 +122,7 @@ final readonly class CommandScriptBuilder
 
         $wrapper = InitialTestRunTemplate::generateWrapper(
             $commandParts,
-            $this->getCoverageAutoloadPath($coverageScriptData),
+            $this->getCoverageAutoloadPath(),
             $this->coverageFragmentDir,
             $this->tmpDir,
             $this->getJUnitTmpPath(),
@@ -152,7 +130,7 @@ final readonly class CommandScriptBuilder
 
         $wrapperPath = sprintf('%s/run-initial-tester.php', $this->tmpDir);
         $this->filesystem->dumpFile($wrapperPath, $wrapper);
-        @chmod($wrapperPath, 0755);
+        $this->filesystem->chmod($wrapperPath, 0755);
 
         return $wrapperPath;
     }
@@ -160,6 +138,31 @@ final readonly class CommandScriptBuilder
     public function getJUnitTmpPath(): string
     {
         return $this->tmpDir . '/' . $this->jUnitFilePath;
+    }
+
+    /**
+     * @return array{script: string, autoload: string|null}
+     */
+    private function generatedCoverageScriptParts(): array
+    {
+        return $this->coverageScriptParts ??= $this->coverageScriptGenerator->generate(
+            $this->projectDir,
+            $this->tmpDir,
+            $this->absoluteSrcDirs,
+            $this->coverageFragmentDir,
+        );
+    }
+
+    private function getCoverageAutoloadPath(): string
+    {
+        return $this->generatedCoverageScriptParts()['autoload']
+            ?? $this->projectDir . '/vendor/autoload.php'
+        ;
+    }
+
+    private function getCoverageScript(): string
+    {
+        return $this->generatedCoverageScriptParts()['script'];
     }
 
     /**

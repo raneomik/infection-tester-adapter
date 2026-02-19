@@ -60,7 +60,7 @@ class CalculatorTest extends TestCase
         Assert::false($calculator->isPositive(-5));
     }
 
-    public function testAbsolute()
+    public function testAbsolute(): void
     {
         $calculator = new Calculator();
         Assert::same(5, $calculator->getAbsolute(5));

@@ -48,13 +48,11 @@ final class MutationBootstrapTemplate
     /**
      * Generate the bootstrap content for mutant execution.
      *
-     * @param string|null $originalBootstrap Path to original bootstrap file (if any)
      * @param string $autoloadPath Path to vendor/autoload.php
      * @param string $originalFilePath Path to original source file
      * @param string $mutatedFilePath Path to mutated source file
      */
     public static function generate(
-        ?string $originalBootstrap,
         string $autoloadPath,
         string $originalFilePath,
         string $mutatedFilePath,
@@ -74,13 +72,11 @@ require_once %s;
 // Delegate setup to MutationBootstrapSetup class
 \Raneomik\InfectionTestFramework\Tester\Script\MutationBootstrapSetup::run(
     %s,
-    %s,
     %s
 );
 
 PHP,
             var_export($autoloadPath, true),
-            var_export($originalBootstrap ?? '', true),
             var_export($originalFilePath, true),
             var_export($mutatedFilePath, true),
         );

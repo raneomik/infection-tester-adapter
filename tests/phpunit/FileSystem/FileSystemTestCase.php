@@ -46,11 +46,15 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\FileSystem;
 
+use function file_get_contents;
+use function fileperms;
 use PHPUnit\Framework\TestCase;
 use function Raneomik\Tests\InfectionTestFramework\Tester\make_tmp_dir;
 use function Raneomik\Tests\InfectionTestFramework\Tester\normalizePath;
 use function Safe\getcwd;
 use function Safe\realpath;
+use function sprintf;
+use function substr;
 use Symfony\Component\Filesystem\Filesystem;
 use function sys_get_temp_dir;
 
@@ -85,6 +89,16 @@ abstract class FileSystemTestCase extends TestCase
     protected function tearDown(): void
     {
         (new Filesystem())->remove($this->tmp);
+    }
+
+    public static function asserChmod(string $expectedPerms, string $path): void
+    {
+        self::assertSame($expectedPerms, substr(sprintf('%o', fileperms($path)), -4));
+    }
+
+    public static function asserFileContains(string $expectedString, string $filepath): void
+    {
+        self::assertStringContainsString($expectedString, (string) @file_get_contents($filepath));
     }
 
     final protected static function removeTmpDir(): void

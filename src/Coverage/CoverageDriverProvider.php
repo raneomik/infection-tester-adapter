@@ -49,20 +49,25 @@ use SebastianBergmann\CodeCoverage\Filter;
  * Detects which PHP coverage driver is available.
  * Priority: PCOV > PHPDBG > Xdebug (following Tester philosophy)
  */
-final readonly class CoverageDriverDetector
+final readonly class CoverageDriverProvider
 {
+    private ?string $driver;
+
+    public function __construct()
+    {
+        $this->driver = $this->detect();
+    }
+
     /**
      * Create a coverage driver with pcov > phpdbg > xdebug priority.
      */
-    public function buildCoverageDriver(Filter $filter): ?Driver
+    public function coverageDriver(Filter $filter): ?Driver
     {
-        $driver = $this->detect();
-
-        if ('pcov' === $driver) {
+        if ('pcov' === $this->driver) {
             return new PcovDriver($filter);
         }
 
-        if ('phpdbg' === $driver) {
+        if ('phpdbg' === $this->driver) {
             $phpdbgDriverClass = 'SebastianBergmann\\CodeCoverage\\Driver\\PhpdbgDriver';
 
             if (class_exists($phpdbgDriverClass)) {
@@ -71,7 +76,7 @@ final readonly class CoverageDriverDetector
             }
         }
 
-        if ('xdebug' === $driver) {
+        if ('xdebug' === $this->driver) {
             return new XdebugDriver($filter);
         }
 
@@ -81,12 +86,12 @@ final readonly class CoverageDriverDetector
     /**
      * @return string[]
      */
-    public function buildPhpIniOptions(?string $pcovDir = null): array
+    public function phpIniOptions(?string $pcovDir = null): array
     {
-        return match ($this->detect()) {
-            'pcov' => $this->buildPcovIniOptions($pcovDir),
+        return match ($this->driver) {
+            'pcov' => $this->pcovIniOptions($pcovDir),
             'phpdbg' => [], // PHPDBG doesn't need INI options
-            'xdebug' => $this->buildXdebugIniOptions(),
+            'xdebug' => $this->xdebugIniOptions(),
             default => [],
         };
     }
@@ -94,12 +99,12 @@ final readonly class CoverageDriverDetector
     /**
      * @return string[]
      */
-    public function buildPhpIniRunnerOptions(?string $pcovDir = null): array
+    public function phpIniRunnerOptions(?string $pcovDir = null): array
     {
-        return match ($this->detect()) {
-            'pcov' => $this->buildPcovRunnerOptions($pcovDir),
+        return match ($this->driver) {
+            'pcov' => $this->pcovRunnerOptions($pcovDir),
             'phpdbg' => [], // PHPDBG doesn't need INI options
-            'xdebug' => $this->buildXdebugRunnerOptions(),
+            'xdebug' => $this->xdebugRunnerOptions(),
             default => [],
         };
     }
@@ -130,7 +135,7 @@ final readonly class CoverageDriverDetector
     /**
      * @return string[]
      */
-    private function buildPcovIniOptions(?string $pcovDir): array
+    private function pcovIniOptions(?string $pcovDir): array
     {
         $options = ['-d', 'pcov.enabled=1'];
 
@@ -145,7 +150,7 @@ final readonly class CoverageDriverDetector
     /**
      * @return array<string, string>
      */
-    private function buildPcovRunnerOptions(?string $pcovDir): array
+    private function pcovRunnerOptions(?string $pcovDir): array
     {
         $options = ['pcov.enabled' => '1'];
 
@@ -157,24 +162,24 @@ final readonly class CoverageDriverDetector
     }
 
     /**
-     * @return array<string, string>
-     */
-    private function buildXdebugRunnerOptions(): array
-    {
-        return [
-            'xdebug.mode' => 'coverage',
-            'xdebug.start_with_request' => 'yes',
-        ];
-    }
-
-    /**
      * @return string[]
      */
-    private function buildXdebugIniOptions(): array
+    private function xdebugIniOptions(): array
     {
         return [
             '-d', 'xdebug.mode=coverage',
             '-d', 'xdebug.start_with_request=yes',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function xdebugRunnerOptions(): array
+    {
+        return [
+            'xdebug.mode' => 'coverage',
+            'xdebug.start_with_request' => 'yes',
         ];
     }
 }

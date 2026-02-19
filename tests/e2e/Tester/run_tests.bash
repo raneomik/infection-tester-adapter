@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 tputx () {
 	test -x $(which tput) && tput "$@"
 }
@@ -20,8 +18,6 @@ run () {
 
 cd "$(dirname "$0")"
 
-set -e pipefail
-
 if [ ! -d "vendor" ]; then
     rm -f composer.lock
     composer install
@@ -30,7 +26,14 @@ fi
 # Ensure directories for coverage output exist
 mkdir -p var/infection/infection
 
-# First, run Infection once with --debug + --with-uncovered to generate coverage and junit files and keep them
-run "vendor/bin/infection --with-uncovered"
+printf 'Plain suite'
+run "vendor/bin/infection --with-uncovered --threads=max --test-framework-options=tests/Plain"
+diff -w expected-output.txt var/infection.log
 
+printf 'FunctionTest suite'
+run "vendor/bin/infection --with-uncovered --threads=max --test-framework-options=tests/FunctionTest"
+diff -w expected-output.txt var/infection.log
+
+printf 'TestCase suite'
+run "vendor/bin/infection --with-uncovered --threads=max --test-framework-options=tests/TestCase"
 diff -w expected-output.txt var/infection.log

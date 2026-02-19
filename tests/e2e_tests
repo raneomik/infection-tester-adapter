@@ -21,12 +21,7 @@ do
         composer install > /dev/null 2>&1
     fi
 
-    if [ -f "run_tests.bash" ]
-    then
-        output="$(bash run_tests.bash)"
-    else
-        output="$(bash ../standard_script.bash ${1:-vendor/bin/infection})"
-    fi
+    output="$(bash run_tests.bash)"
 
     if [ $? != 0 ]
     then

@@ -6,13 +6,9 @@ namespace App\Covered;
 
 class UserService
 {
-    private array $users = [];
-    private array $logs = [];
+    use LoggerTrait;
 
-    private function log(string $message): void
-    {
-        $this->logs[] = $message;
-    }
+    private array $users = [];
 
     public function addUser(string $name, string $email): bool
     {
@@ -55,20 +51,5 @@ class UserService
     public function getUserCount(): int
     {
         return count($this->users);
-    }
-
-    public function getLogs(): array
-    {
-        return $this->logs;
-    }
-
-    public function hasLogs(): bool
-    {
-        return [] !== $this->logs;
-    }
-
-    public function clearLogs(): void
-    {
-        $this->logs = [];
     }
 }

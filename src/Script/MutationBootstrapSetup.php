@@ -37,19 +37,17 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Script;
 
 use Infection\StreamWrapper\IncludeInterceptor;
-use function is_file;
 
 /**
  * Sets up the mutation environment by configuring the IncludeInterceptor.
  * This class is called from the generated mutation bootstrap script.
  *
- * The original bootstrap (e.g., tests/bootstrap.php) is loaded AFTER the interceptor
- * is configured, so that any files included by the bootstrap are properly intercepted.
+ * The interceptor is configured BEFORE the test file loads its bootstrap,
+ * so that any files included by the bootstrap are properly intercepted.
  */
 final readonly class MutationBootstrapSetup
 {
-    public function __construct(
-        private ?string $originalBootstrap, // Path to tests/bootstrap.php (optional)
+    private function __construct(
         private string $originalFilePath,   // Original source file to intercept
         private string $mutatedFilePath,    // Mutated file to inject
     ) {
@@ -58,45 +56,24 @@ final readonly class MutationBootstrapSetup
     /**
      * Setup the mutation interception.
      *
-     * Order is important:
-     * 1. Configure interceptor FIRST
-     * 2. Load bootstrap AFTER (so its includes are intercepted)
+     * Only configure the interceptor - the bootstrap will be loaded by test files themselves.
+     * We don't need to load it here since:
+     * 1. The autoloader is already loaded by our mutation bootstrap
+     * 2. Environment::setup() will be called by test files
      */
     private function setup(): void
     {
         $this->configureInterceptor();
-        $this->loadOriginalBootstrap();
     }
 
     /**
      * Static entry point for the generated bootstrap script.
      */
     public static function run(
-        ?string $originalBootstrap,
         string $originalFilePath,
         string $mutatedFilePath,
     ): void {
-        (new self($originalBootstrap, $originalFilePath, $mutatedFilePath))->setup();
-    }
-
-    /**
-     * Load the original test bootstrap if it exists.
-     *
-     * This is typically tests/bootstrap.php from the tested project.
-     * It's loaded AFTER the interceptor is configured so that any files
-     * included by the bootstrap are properly intercepted.
-     *
-     * Note: The bootstrap may already have been loaded by Tester,
-     * but requiring it again is safe thanks to PHP's require_once.
-     */
-    private function loadOriginalBootstrap(): void
-    {
-        if (null === $this->originalBootstrap || !is_file($this->originalBootstrap)) {
-            // Bootstrap not found or empty - this is OK as it might already be loaded by Tester
-            return;
-        }
-
-        require_once $this->originalBootstrap;
+        (new self($originalFilePath, $mutatedFilePath))->setup();
     }
 
     /**

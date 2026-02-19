@@ -3,6 +3,7 @@
 namespace App\Tests\TestCase\Covered;
 
 require __DIR__ . '/../../bootstrap.php';
+require_once __DIR__ . '/../../../src/Covered/functions.php';
 
 use Tester\Assert;
 use Tester\TestCase;
@@ -13,11 +14,6 @@ use function App\Covered\formatName;
  */
 class FormatNameFunctionTest extends TestCase
 {
-    public function setUp(): void
-    {
-        require_once __DIR__ . '/../../../src/Covered/functions.php';
-    }
-
     public function testFormatFullName(): void
     {
         Assert::same('John Doe', formatName('John', 'Doe'));

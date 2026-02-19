@@ -11,6 +11,7 @@ help:
 
 INFECTION=vendor/bin/infection
 
+suite := 'tests'
 
 .PHONY: check
 check: 	 ## Runs all the checks
@@ -22,12 +23,12 @@ test: tester infection
 
 .PHONY: tester
 tester: vendor/autoload.php
-	vendor/bin/tester tests
+	vendor/bin/tester $(suite)
 
 .PHONY: tester_coverage
 tester_coverage: 	## Executes the tests with code coverage
 tester_coverage: vendor/autoload.php
-	XDEBUG_MODE=coverage vendor/bin/tester \
+	XDEBUG_MODE=coverage vendor/bin/tester $(suite) \
 		--coverage var/infection/infection/index.xml --coverage-src src \
 		-o junit:var/infection/infection/junit.xml \
 
@@ -35,8 +36,10 @@ tester_coverage: vendor/autoload.php
 infection: vendor/autoload.php
 	$(INFECTION) \
 		--threads=max \
-		--show-mutations=0
-	diff --ignore-all-space expected-output.txt var/infection.log
+		--show-mutations=0 \
+		--with-uncovered \
+		--test-framework-options=$(suite)
+	@diff --ignore-all-space expected-output.txt var/infection.log
 
 # Do install if there's no 'vendor'
 vendor/autoload.php:

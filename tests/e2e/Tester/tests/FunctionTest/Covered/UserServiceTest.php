@@ -20,6 +20,7 @@ test('Cannot add nameless user', function () {
     $service = new UserService();
     Assert::false($service->addUser('', 'john@example.com'));
     Assert::same(0, $service->getUserCount());
+    Assert::contains('Failed to add user: empty name or email', $service->getLogs());
 });
 
 test('Cannot add emailless user', function () {
@@ -33,6 +34,7 @@ test('Cannot add duplicate user', function () {
     $service->addUser('John Doe', 'john@example.com');
     Assert::false($service->addUser('Jane Doe', 'john@example.com'));
     Assert::same(1, $service->getUserCount());
+    Assert::contains('Failed to add user: email john@example.com already exists', $service->getLogs());
 });
 
 test('Remove User Test', function () {
@@ -42,6 +44,7 @@ test('Remove User Test', function () {
     Assert::same(0, $service->getUserCount());
     Assert::false($service->removeUser('john@example.com'));
     Assert::same(0, $service->getUserCount());
+    Assert::contains('Failed to remove user: email john@example.com not found', $service->getLogs());
 });
 
 test('Remove inexistent User Test', function () {

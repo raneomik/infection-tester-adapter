@@ -60,14 +60,11 @@ final readonly class InitialTestRunCommandBuilder
      */
     public function build(
         string $testFrameworkExecutable,
-        array $baseArguments,
-        array $phpExtraArgs,
+        array $baseArguments = [],
+        array $phpExtraArgs = [],
     ): array {
-        // Generate coverage script readable by Infection (uses CoverageScriptGenerator::generate)
-        $coverageScript = $this->commandScriptBuilder->buildCoverageScript();
-
         // Generate setup script for Tester Runner (uses JobSetup::configure)
-        $setupScript = $this->commandScriptBuilder->buildSetupScript($coverageScript);
+        $setupScript = $this->commandScriptBuilder->buildSetupScript();
 
         // Build Tester framework arguments with --setup
         $frameworkArgs = array_merge(
@@ -81,9 +78,8 @@ final readonly class InitialTestRunCommandBuilder
         // Generate PHP wrapper
         $wrapperPath = $this->commandScriptBuilder->buildInitialTestWrapper(
             $testFrameworkExecutable,
-            $frameworkArgs,
             $phpExtraArgs,
-            $coverageScript,
+            $frameworkArgs,
         );
 
         return ['php', $wrapperPath];

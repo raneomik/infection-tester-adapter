@@ -37,23 +37,29 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
 use function class_exists;
-use function file_get_contents;
 use function fwrite;
 use function glob;
 use function is_file;
 use function is_string;
-use function mkdir;
+use const PHP_EOL;
 use function rtrim;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Report\Xml\Facade as PhpUnitXmlFacade;
+use function sprintf;
 use const STDERR;
+use Symfony\Component\Filesystem\Filesystem;
 use function unserialize;
 
 /**
  * Merges coverage fragments and normalizes JUnit XML for Infection compatibility.
  */
-final class CoverageMerger
+final readonly class CoverageMerger
 {
+    public function __construct(
+        private Filesystem $filesystem = new Filesystem(),
+    ) {
+    }
+
     /**
      * Merge coverage fragments and normalize JUnit XML.
      *
@@ -63,19 +69,19 @@ final class CoverageMerger
      *
      * @return int Exit code (0 = success)
      */
-    public static function merge(string $fragmentDir, string $outDir, ?string $junitPath = null): int
+    public function merge(string $fragmentDir, string $outDir, ?string $junitPath = null): int
     {
         // Step 1: Merge all fragments
-        $merged = self::mergeFragments($fragmentDir);
+        $merged = $this->mergeFragments($fragmentDir);
 
-        if (null === $merged) {
+        if (!$merged instanceof CodeCoverage) {
             fwrite(STDERR, "No valid coverage fragments found\n");
 
             return 4;
         }
 
         // Step 2: Write coverage XML
-        self::writeCoverageXml($merged, $outDir);
+        $this->writeCoverageXml($merged, $outDir);
 
         // Step 3: Normalize JUnit and replace ::run with real test methods
         if (is_string($junitPath) && is_file($junitPath)) {
@@ -88,12 +94,12 @@ final class CoverageMerger
     /**
      * Merge all coverage fragments from directory.
      */
-    private static function mergeFragments(string $fragmentDir): ?CodeCoverage
+    private function mergeFragments(string $fragmentDir): ?CodeCoverage
     {
-        $files = self::findFragmentFiles($fragmentDir);
+        $files = $this->findFragmentFiles($fragmentDir);
 
         if ([] === $files) {
-            fwrite(STDERR, "No coverage fragments found in $fragmentDir\n");
+            fwrite(STDERR, sprintf('No coverage fragments found in %s%s', $fragmentDir, PHP_EOL));
 
             return null;
         }
@@ -101,13 +107,13 @@ final class CoverageMerger
         $merged = null;
 
         foreach ($files as $file) {
-            $cc = self::loadFragment($file);
+            $cc = $this->loadFragment($file);
 
-            if (null === $cc) {
+            if (!$cc instanceof CodeCoverage) {
                 continue;
             }
 
-            $merged = self::mergeIntoCollection($merged, $cc);
+            $merged = $this->mergeIntoCollection($merged, $cc);
         }
 
         return $merged;
@@ -118,7 +124,7 @@ final class CoverageMerger
      *
      * @return string[]
      */
-    private static function findFragmentFiles(string $fragmentDir): array
+    private function findFragmentFiles(string $fragmentDir): array
     {
         $result = glob(rtrim($fragmentDir, '/') . '/*.phpser');
 
@@ -128,9 +134,9 @@ final class CoverageMerger
     /**
      * Merge a coverage instance into the collection.
      */
-    private static function mergeIntoCollection(?CodeCoverage $merged, CodeCoverage $cc): CodeCoverage
+    private function mergeIntoCollection(?CodeCoverage $merged, CodeCoverage $cc): CodeCoverage
     {
-        if (null === $merged) {
+        if (!$merged instanceof CodeCoverage) {
             return $cc;
         }
 
@@ -143,11 +149,11 @@ final class CoverageMerger
     /**
      * Load a single coverage fragment from file.
      */
-    private static function loadFragment(string $file): ?CodeCoverage
+    private function loadFragment(string $file): ?CodeCoverage
     {
-        $data = @file_get_contents($file);
+        $data = $this->filesystem->readFile($file);
 
-        if (false === $data || '' === $data) {
+        if ('' === $data) {
             return null;
         }
 
@@ -161,25 +167,25 @@ final class CoverageMerger
      *
      * Uses a UUID as the test identifier to avoid XPath conflicts.
      */
-    private static function writeCoverageXml(CodeCoverage $coverage, string $outDir): void
+    private function writeCoverageXml(CodeCoverage $codeCoverage, string $outDir): void
     {
-        @mkdir($outDir, 0777, true);
+        $this->filesystem->mkdir($outDir);
 
-        $phpUnitVersion = self::getPhpUnitVersion();
-        $writer = new PhpUnitXmlFacade($phpUnitVersion);
-        $writer->process($coverage, $outDir);
+        $phpUnitVersion = $this->getPhpUnitVersion();
+        $facade = new PhpUnitXmlFacade($phpUnitVersion);
+        $facade->process($codeCoverage, $outDir);
     }
 
     /**
      * Get the PHPUnit version for the XML writer.
      */
-    private static function getPhpUnitVersion(): string
+    private function getPhpUnitVersion(): string
     {
-        if (!class_exists('PHPUnit\\Runner\\Version')) {
+        if (!class_exists(\PHPUnit\Runner\Version::class)) {
             return 'unknown';
         }
 
-        $versionClass = 'PHPUnit\\Runner\\Version';
+        $versionClass = \PHPUnit\Runner\Version::class;
 
         return $versionClass::id();
     }

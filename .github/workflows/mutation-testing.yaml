@@ -40,7 +40,7 @@ jobs:
 
       - name: Get composer cache directory
         id: composer-cache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -59,19 +59,6 @@ jobs:
         run: make infection
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
-      
-      # - name: Run Stryker
-      #   uses: stryker-mutator/github-action@v0.0.1
-      #   with:
-      #       testProject: tests/phpunit
-      #   env:
-      #     STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
-
-      # - name: Upload Stryker report
-      #   uses: actions/upload-artifact@v6
-      #   with:
-      #       name: html-report
-      #       path: ${{github.workspace}}/var/**/*.html
 
   # This is a meta job to avoid to have to constantly change the protection rules
   # whenever we touch the matrix.

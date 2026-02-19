@@ -34,51 +34,39 @@
 
 declare(strict_types=1);
 
-namespace Raneomik\InfectionTestFramework\Tester\Config;
+namespace Raneomik\Tests\InfectionTestFramework\Tester\Command;
 
-use function is_file;
-use RuntimeException;
-use function sprintf;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
+use Symfony\Component\Process\PhpExecutableFinder;
 
-/**
- * Factory for creating MutationConfigBuilder instances.
- * Uses Tester conventions: tests/ directory and tests/bootstrap.php
- */
-final readonly class MutationConfigBuilderFactory
+#[Group('unit')]
+final class CommandLineBuilderTest extends TestCase
 {
-    private const DEFAULT_BOOSTRAP_FILE = 'tests/bootstrap.php';
+    private CommandLineBuilder $commandLineBuilder;
 
-    public function __construct(
-        private string $tmpDir,
-        private string $projectDir,
-    ) {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->commandLineBuilder = new CommandLineBuilder();
     }
 
-    /**
-     * Create a MutationConfigBuilder with conventional bootstrap path.
-     */
-    public function create(): MutationConfigBuilder
+    public function test_it_builds_cli_args(): void
     {
-        return new MutationConfigBuilder(
-            $this->tmpDir,
-            $this->projectDir,
-            $this->resolveBootstrapPath(),
-        );
-    }
+        self::assertSame(['test'], $this->commandLineBuilder->build('test', ['', ''], ['']));
 
-    private function resolveBootstrapPath(): string
-    {
-        // Tester convention: tests/bootstrap.php
-        $bootstrapPath = sprintf(
-            '%s/%s',
-            $this->projectDir,
-            self::DEFAULT_BOOSTRAP_FILE
-        );
+        self::assertContains('test.bat', $batchSim = $this->commandLineBuilder->build('test.bat', [''], ['blabla', '']));
+        self::assertContains('blabla', $batchSim);
+        self::assertNotContains('', $batchSim);
+        self::assertNotContains('-p', $batchSim);
+        self::assertNotContains('php', $batchSim);
 
-        if (is_file($bootstrapPath)) {
-            return $bootstrapPath;
-        }
-
-        throw new RuntimeException(sprintf('Bootstrap file "%s" not found.', $bootstrapPath));
+        self::assertContains('testing-fwk', $fwkCmd = $this->commandLineBuilder->build('testing-fwk', ['blabla'], ['', '']));
+        self::assertContains('-p', $fwkCmd);
+        self::assertContains((new PhpExecutableFinder())->find(false), $fwkCmd);
+        self::assertContains('blabla', $fwkCmd);
+        self::assertNotContains('', $fwkCmd);
     }
 }

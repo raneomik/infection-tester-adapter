@@ -42,12 +42,12 @@ use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\TesterAdapter;
 use Raneomik\InfectionTestFramework\Tester\TesterAdapterFactory;
 
-#[Group('integration')]
+#[Group('unit')]
 final class TesterAdapterFactoryTest extends TestCase
 {
     public function test_it_creates_tester_adapter(): void
     {
-        $adapter = TesterAdapterFactory::create(
+        $testFrameworkAdapter = TesterAdapterFactory::create(
             '/path/to/tester',
             '/tmp',
             __DIR__ . '/valid.yml',
@@ -58,11 +58,12 @@ final class TesterAdapterFactoryTest extends TestCase
             true,
         );
 
-        self::assertInstanceOf(TesterAdapter::class, $adapter);
+        self::assertInstanceOf(TesterAdapter::class, $testFrameworkAdapter);
     }
 
     public function test_it_returns_right_adapter_name(): void
     {
         self::assertSame(TesterAdapter::NAME, TesterAdapterFactory::getAdapterName());
+        self::assertSame(TesterAdapter::NAME, TesterAdapterFactory::getExecutableName());
     }
 }

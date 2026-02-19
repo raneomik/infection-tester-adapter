@@ -19,14 +19,8 @@ This package provides test framework adapter of [Tester][tester] for [infection]
 
 ## Installation
 
-In a standard usage, infection should detect [`nette/tester`][tester] being used and
-leverage its [`infection/extension-installer`][infection/extension-installer] to install this
-package.
-
-Otherwise, you can still install it as usual:
-
 ```shell
-composer require --dev raneomik/infection-tester-adapter
+composer require --dev [infection/infection] raneomik/infection-tester-adapter
 ```
 
 The adapter should be automatically registered in Infection's runtime through its auto-discovery mechanism.
@@ -39,18 +33,16 @@ Once installed, you can run Infection:
 vendor/bin/infection # optional: --test-framework=tester
 ```
 
-Infection will automatically detect and use the [Tester][tester] adapter when it is declared in your project.
-
 ### Configuration
 
-This adapter should work directly with your existing Tester tests, with limitations :
+This adapter works directly with your existing Tester tests, with some limitations:
 
 - Tester provides jUnit.xml and Clover.xml coverage reports, but Infection expects a more complete phpunit report. This adapter embeds transformation of Testers' reports during the mutation process, so it is NOT recomended to use `--skip-initial-tests` with `--coverage` options (it just results in xpath read/FQCN error, unless you are using a script which does the needed trasformation).
-- [Test cases](https://tester.nette.org/en/testcase) are recombed for better report result
+- [Test cases](https://tester.nette.org/en/testcase) are recommended for better report result. But are slower.
 - other forms of tests are supported, but need namespaces to be identified by Infection and referenced in report as covering code.
 
-No additional configuration, following Tester's "Convention over configuration" principle.
-*("have a bootstrap.php file in your tests root" is the main requirement)*
+No additional configuration needed, "Convention over configuration" principle.
+*("have a tests in 'tests/' dir and bootstrap.php file in your tests root" is the main requirement)*
 
 
 Infection configuration file `infection.json5.dist`.

@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Script;
 
-use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverDetector;
+use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Tester\Runner\Runner;
 
 /**
@@ -54,9 +54,9 @@ final class TesterJobSetup
      */
     public static function configure(Runner $runner, string $prependFile, ?string $pcovDir = null): void
     {
-        $optionsBuilder = new CoverageDriverDetector();
+        $coverageDriverProvider = new CoverageDriverProvider();
 
-        foreach ($optionsBuilder->buildPhpIniRunnerOptions($pcovDir) as $option => $value) {
+        foreach ($coverageDriverProvider->phpIniRunnerOptions($pcovDir) as $option => $value) {
             $runner->addPhpIniOption($option, $value);
         }
 

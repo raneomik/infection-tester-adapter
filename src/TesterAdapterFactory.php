@@ -41,7 +41,8 @@ use Infection\AbstractTestFramework\TestFrameworkAdapterFactory;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandScriptBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilder;
-use Raneomik\InfectionTestFramework\Tester\Config\MutationConfigBuilderFactory;
+use Raneomik\InfectionTestFramework\Tester\Config\MutationConfigBuilder;
+use Raneomik\InfectionTestFramework\Tester\Coverage\PrependScriptGenerator;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -62,12 +63,6 @@ final readonly class TesterAdapterFactory implements TestFrameworkAdapterFactory
         array $sourceDirectories,
         bool $skipCoverage,
     ): TestFrameworkAdapter {
-        // Create the mutation config builder factory (dependency of TesterAdapter)
-        $mutationConfigBuilderFactory = new MutationConfigBuilderFactory(
-            $tmpDir,
-            $projectDir,
-        );
-
         // Create the initial test run command builder (dependency of TesterAdapter)
         $initialTestRunCommandBuilder = new InitialTestRunCommandBuilder(
             new CommandScriptBuilder(
@@ -77,6 +72,7 @@ final readonly class TesterAdapterFactory implements TestFrameworkAdapterFactory
                 Path::makeRelative($jUnitFilePath, $tmpDir),
                 $filesystem = new Filesystem(),
                 new CommandLineBuilder(),
+                new PrependScriptGenerator(),
             )
         );
 
@@ -88,17 +84,17 @@ final readonly class TesterAdapterFactory implements TestFrameworkAdapterFactory
             new VersionParser(self::NAME),
             new CommandLineBuilder(),
             $initialTestRunCommandBuilder,
-            $mutationConfigBuilderFactory->create(),
+            new MutationConfigBuilder($tmpDir, $projectDir),
         );
     }
 
     public static function getAdapterName(): string
     {
-        return 'tester';
+        return TesterAdapter::NAME;
     }
 
     public static function getExecutableName(): string
     {
-        return 'tester';
+        return TesterAdapter::NAME;
     }
 }

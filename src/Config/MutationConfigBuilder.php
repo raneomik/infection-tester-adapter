@@ -36,10 +36,12 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Config;
 
-use function array_merge;
+use function array_map;
+use function array_unique;
 use function dirname;
+use Infection\AbstractTestFramework\Coverage\TestLocation;
 use function is_file;
-use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverDetector;
+use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\MutationBootstrapTemplate;
 use function sprintf;
 use function trim;
@@ -53,7 +55,6 @@ final readonly class MutationConfigBuilder
     public function __construct(
         private string $tmpDir,
         private string $projectDir,
-        private ?string $originalBootstrap,
     ) {
     }
 
@@ -68,7 +69,6 @@ final readonly class MutationConfigBuilder
         string $mutatedFilePath,
     ): array {
         $bootstrapContent = MutationBootstrapTemplate::generate(
-            $this->originalBootstrap,
             $this->findAutoloadPath(),
             $originalFilePath,
             $mutatedFilePath,
@@ -93,33 +93,37 @@ final readonly class MutationConfigBuilder
     /**
      * Build Tester command-line arguments for mutant execution.
      *
-     * @param string[] $baseArguments Base arguments from test configuration
+     * @param TestLocation[] $coverageTests Tests that cover the mutated code
      *
      * @return string[]
      */
     public function buildMutantArguments(
-        array $baseArguments,
-        string $bootstrapPath,
         string $outputDir,
+        array $coverageTests,
     ): array {
-        return array_merge(
-            $baseArguments,
-            [
-                '-j', '1',
-                $bootstrapPath,
-                '-o', sprintf('junit:%s/junit.xml', $outputDir),
-            ]
-        );
+        // DON'T include $baseArguments!
+        // It may contain directory paths (tests/) or discovery options that force Tester
+        // to scan all tests even when we pass specific files, causing 4× slowdown.
+        // For mutants, we only want to run the exact tests that cover the mutated code.
+        return [
+            '-j', '1',
+            '-o', sprintf('junit:%s/junit.xml', $outputDir),
+            ...array_unique(array_map(
+                static fn (TestLocation $testLocation): string => $testLocation->getFilePath() ?? '',
+                $coverageTests
+            )),
+        ];
     }
 
     /**
-     * Build PHP extra arguments for PCOV coverage.
+     * Build PHP extra arguments for PCOV coverage and mutation bootstrap.
      *
      * @param string[] $srcDirs
+     * @param string|null $bootstrapPath Optional mutation bootstrap to prepend
      *
      * @return string[]
      */
-    public function buildPhpExtraArgs(array $srcDirs): array
+    public function buildExtraArgs(array $srcDirs, ?string $bootstrapPath = null): array
     {
         if ([] === $srcDirs) {
             return [];
@@ -128,9 +132,16 @@ final readonly class MutationConfigBuilder
         $firstSrc = $srcDirs[0];
         $pcovDir = sprintf('%s/%s', $this->projectDir, trim($firstSrc, '/'));
 
-        $detector = new CoverageDriverDetector();
+        $coverageDriverProvider = new CoverageDriverProvider();
+        $args = $coverageDriverProvider->phpIniOptions($pcovDir);
 
-        return $detector->buildPhpIniOptions($pcovDir);
+        // Add auto-prepend-file for mutation bootstrap
+        if (null !== $bootstrapPath && is_file($bootstrapPath)) {
+            $args[] = '-d';
+            $args[] = sprintf('auto_prepend_file=%s', $bootstrapPath);
+        }
+
+        return $args;
     }
 
     /**
@@ -141,7 +152,7 @@ final readonly class MutationConfigBuilder
         $autoloadPath = $this->projectDir . '/vendor/autoload.php';
 
         if (!is_file($autoloadPath)) {
-            $autoloadPath = dirname(__DIR__, 2) . '/vendor/autoload.php';
+            return dirname(__DIR__, 2) . '/vendor/autoload.php';
         }
 
         return $autoloadPath;

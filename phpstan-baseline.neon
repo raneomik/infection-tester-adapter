@@ -1,10 +1,19 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
+			count: 1
+			path: src/Override/Infection/TestFramework/Config/TestFrameworkConfigLocator.php
 
 		-
-			message: "#^Parameter \\#7 \\$sourceDirectories \\(array\\<string\\>\\) of method Raneomik\\\\InfectionTestFramework\\\\Tester\\\\TesterAdapterFactory\\:\\:create\\(\\) should be contravariant with parameter \\$sourceDirectories \\(array\\) of method Infection\\\\AbstractTestFramework\\\\TestFrameworkAdapterFactory\\:\\:create\\(\\)$#"
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: src/Script/CoverageRuntime.php
+
+		-
+			message: '#^Parameter \#7 \$sourceDirectories \(array\<string\>\) of method Raneomik\\InfectionTestFramework\\Tester\\TesterAdapterFactory\:\:create\(\) should be contravariant with parameter \$sourceDirectories \(array\) of method Infection\\AbstractTestFramework\\TestFrameworkAdapterFactory\:\:create\(\)$#'
 			identifier: method.childParameterType
 			count: 1
 			path: src/TesterAdapterFactory.php
