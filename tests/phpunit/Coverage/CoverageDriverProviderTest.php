@@ -44,14 +44,19 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Raneomik\Tests\InfectionTestFramework\Tester\FileSystem;
+namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
+use function extension_loaded;
+use const PHP_SAPI;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use function putenv;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use ReflectionProperty;
+use SebastianBergmann\CodeCoverage\Driver\Driver;
 use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
+use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
 use SebastianBergmann\CodeCoverage\Filter;
 
 #[Group('unit')]
@@ -59,8 +64,19 @@ final class CoverageDriverProviderTest extends TestCase
 {
     public function test_it_loads_driver(): void
     {
-        $coverageDriverProvider = $this->createProvider('pcov');
-        self::assertInstanceOf(PcovDriver::class, $coverageDriverProvider->coverageDriver(new Filter()));
+        $expectedDriver = match (true) {
+            extension_loaded('pcov') => PcovDriver::class,
+            extension_loaded('xdebug') => XdebugDriver::class,
+            PHP_SAPI === 'phpdbg' => 'phpdbg',
+            default => null,
+        };
+
+        if (XdebugDriver::class === $expectedDriver) {
+            putenv('XDEBUG_MODE=coverage');
+        }
+
+        $coverageDriverProvider = $this->createProvider();
+        self::assertInstanceOf(Driver::class, $coverageDriverProvider->coverageDriver(new Filter()));
     }
 
     /**

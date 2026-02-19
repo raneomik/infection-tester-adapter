@@ -41,7 +41,7 @@ rector: vendor/autoload.php
 
 .PHONY: cs
 cs:	 ## Apply CS fixes
-cs: gitignore composer-validate php-cs-fixer
+cs: gitignore  composer-validate php-cs-fixer
 
 .PHONY: cs-lint
 cs-lint: ## Run CS checks
@@ -54,6 +54,7 @@ gitignore:
 .PHONY: composer-validate
 composer-validate: vendor/autoload.php
 	composer validate --strict
+	composer dumpautoload --strict-psr --dev -a -o
 
 .PHONY: php-cs-fixer
 php-cs-fixer: $(PHP_CS_FIXER) vendor/autoload.php
@@ -74,7 +75,7 @@ phpstan:
 
 .PHONY: test-unit
 test-unit: vendor/autoload.php
-	$(PHPUNIT) $(PHPUNIT_ARGS)
+	XDEBUG_MODE=coverage $(PHPUNIT) $(PHPUNIT_ARGS)
 
 .PHONY: test-e2e
 test-e2e: vendor/autoload.php
@@ -93,7 +94,6 @@ vendor/autoload.php:
 composer.lock: composer.json
 	composer update
 	touch -c $@
-
 
 $(INFECTION): Makefile
 	wget -q $(INFECTION_URL) --output-document=$(INFECTION)

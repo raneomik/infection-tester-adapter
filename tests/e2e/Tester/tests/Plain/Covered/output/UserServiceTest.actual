@@ -1,0 +1,6 @@
+[
+	'User John Doe added successfully',
+	'Failed to add user: empty name or email',
+	'Failed to add user: empty name or email',
+	'Failed to add user: email john@example.com already exists',
+]

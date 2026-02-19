@@ -34,10 +34,11 @@
 
 declare(strict_types=1);
 
-namespace Infection\TestFramework\Config;
+namespace Raneomik\InfectionTestFramework\Tester\Override;
 
 use function file_exists;
 use Infection\FileSystem\Locator\FileOrDirectoryNotFound;
+use Infection\TestFramework\Config\TestFrameworkConfigLocatorInterface;
 use function is_file;
 use function Safe\realpath;
 use function sprintf;
@@ -45,7 +46,7 @@ use function sprintf;
 /**
  * @internal
  */
-final readonly class TestFrameworkConfigLocator implements TestFrameworkConfigLocatorInterface
+final readonly class TesterConfigLocator implements TestFrameworkConfigLocatorInterface
 {
     private const DEFAULT_EXTENSIONS = [
         'xml',

@@ -13,16 +13,16 @@
     "psr-4": {
       "Raneomik\\InfectionTestFramework\\Tester\\": "src/"
     },
-    "exclude-from-classmap": [
-      "/tests/"
-    ],
     "files": [
-      "src/Override/Infection/TestFramework/Config/TestFrameworkConfigLocator.php"
+      "src/Override/test_framework_config_alias.php"
+    ],
+    "exclude-from-classmap": [
+      "/tests/e2e"
     ]
   },
   "autoload-dev": {
     "psr-4": {
-      "Raneomik\\Tests\\InfectionTestFramework\\Tester\\": "tests/phpunit"
+      "Raneomik\\Tests\\InfectionTestFramework\\Tester\\": "tests/phpunit/"
     },
     "files": [
       "tests/phpunit/Helpers.php"
@@ -44,7 +44,8 @@
     "infection/include-interceptor": "^0.2.0",
     "phpunit/php-code-coverage": "^11.0",
     "symfony/filesystem": "^6.4 || ^7.4",
-    "symfony/process": "^6.4 || ^7.4"
+    "symfony/process": "^6.4 || ^7.4",
+    "symfony/yaml": "^6.4 || ^7.4"
   },
   "extra": {
     "infection": {

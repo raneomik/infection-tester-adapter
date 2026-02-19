@@ -37,9 +37,11 @@ declare(strict_types=1);
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Adapter;
 
 use function dirname;
+use function extension_loaded;
 use function implode;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\Group;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandScriptBuilder;
@@ -164,7 +166,7 @@ final class TesterAdapterTest extends FileSystemTestCase
         self::asserFileContains(self::MUTATED_FILE_PATH, $expectedConfigPath);
     }
 
-    public function test_mutant_cmd_line(): void
+    public function test_mutant_cmd_line(): string
     {
         $testerAdapter = $this->createAdapter();
 
@@ -182,11 +184,33 @@ final class TesterAdapterTest extends FileSystemTestCase
 
         self::assertStringContainsString('vendor/bin/tester', $inlineCmd);
         self::assertStringContainsString('-p /usr/bin/php', $inlineCmd);
-        self::assertStringContainsString('-d pcov.enabled=1', $inlineCmd);
-        self::assertStringContainsString('-d pcov.directory', $inlineCmd);
         self::assertStringContainsString('-d auto_prepend_file', $inlineCmd);
         self::assertStringContainsString('-j 1 -o junit', $inlineCmd);
         self::assertStringContainsString('/path/to/test', $inlineCmd);
+
+        return $inlineCmd;
+    }
+
+    #[Depends('test_mutant_cmd_line')]
+    public function test_pcov_ini_options(string $inlineCmd): void
+    {
+        if (!extension_loaded('pcov')) {
+            self::markTestSkipped('PCOV extension is not loaded.');
+        }
+
+        self::assertStringContainsString('-d pcov.enabled=1', $inlineCmd);
+        self::assertStringContainsString('-d pcov.directory', $inlineCmd);
+    }
+
+    #[Depends('test_mutant_cmd_line')]
+    public function test_xdebug_ini_options(string $inlineCmd): void
+    {
+        if (!extension_loaded('xdebug')) {
+            self::markTestSkipped('PCOV extension is not loaded.');
+        }
+
+        self::assertStringContainsString('-d xdebug.start_with_request=yes', $inlineCmd);
+        self::assertStringContainsString('-d xdebug.mode=coverage', $inlineCmd);
     }
 
     public function test_it_has_junit_report(): void

@@ -58,9 +58,6 @@ use function substr;
 use Symfony\Component\Filesystem\Filesystem;
 use function sys_get_temp_dir;
 
-/**
- * @private
- */
 abstract class FileSystemTestCase extends TestCase
 {
     private const TMP_DIR_NAME = 'infection-test';
