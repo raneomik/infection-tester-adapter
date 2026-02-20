@@ -90,6 +90,6 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
 
         self::assertFileExists($prependFile = $this->tmp . '/coverage_prepend.php');
         self::asserChmod('0644', $prependFile);
-        self::asserFileContains('/vendor/autoload.php', $prependFile);
+        self::assertFileContains('/vendor/autoload.php', $prependFile);
     }
 }

@@ -75,9 +75,9 @@ final class InitialTestRunCommandBuilderTest extends FileSystemTestCase
             $wrapper = $this->tmp . '/run-initial-tester.php',
         ], $this->initialTestRunCommandBuilder->build('testing-framework'));
 
-        self::asserFileContains('testing-framework', $wrapper);
-        self::asserFileContains('--setup', $wrapper);
-        self::asserFileContains(sprintf('%s/tester-setup.php', $this->tmp), $wrapper);
-        self::asserFileContains(sprintf('junit:%s/junit.xml', $this->tmp), $wrapper);
+        self::assertFileContains('testing-framework', $wrapper);
+        self::assertFileContains('--setup', $wrapper);
+        self::assertFileContains(sprintf('%s/tester-setup.php', $this->tmp), $wrapper);
+        self::assertFileContains(sprintf('junit:%s/junit.xml', $this->tmp), $wrapper);
     }
 }

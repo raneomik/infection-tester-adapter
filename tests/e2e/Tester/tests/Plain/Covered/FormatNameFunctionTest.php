@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Plain\Covered;
 
 require __DIR__ . '/../../bootstrap.php';
+
 require_once __DIR__ . '/../../../src/Covered/functions.php';
 
-use Tester\Assert;
 use function App\Covered\formatName;
+use Tester\Assert;
 
 Assert::same('John Doe', formatName('John', 'Doe'));
 Assert::same('John', formatName('John', ''));

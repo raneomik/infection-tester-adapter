@@ -22,6 +22,8 @@ jobs:
         operating-system: [ ubuntu-latest ]
         php-version: [ '8.2' ]
         check:
+          - makefile-target: 'composer-validate'
+            name: 'Composer Validate & PSR-4 Check'
           - makefile-target: 'rector'
             name: 'Rector'
           - makefile-target: 'cs-lint'

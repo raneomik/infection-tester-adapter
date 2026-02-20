@@ -34,6 +34,7 @@
 
 declare(strict_types=1);
 
+use Rector\CodingStyle\Rector\Assign\SplitDoubleAssignRector;
 use Rector\Config\RectorConfig;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitSelfCallRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
@@ -63,5 +64,6 @@ return RectorConfig::configure()
 
     ->withSkip([
         PreferPHPUnitThisCallRector::class,
+        SplitDoubleAssignRector::class,
     ])
 ;

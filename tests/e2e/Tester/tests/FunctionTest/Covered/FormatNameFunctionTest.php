@@ -6,10 +6,10 @@ namespace App\Tests\FunctionTest\Covered;
 
 require __DIR__ . '/../bootstrap.php';
 
-use Tester\Assert;
 use function App\Covered\formatName;
+use Tester\Assert;
 
-setUp(function () {
+setUp(function (): void {
     require_once __DIR__ . '/../../../src/Covered/functions.php';
 });
 
@@ -20,4 +20,3 @@ test('Format name test', function () {
     Assert::same('Anonymous', formatName('', ''));
     Assert::same('Mary Jane', formatName('Mary', 'Jane'));
 });
-

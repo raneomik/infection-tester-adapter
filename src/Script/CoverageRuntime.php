@@ -50,6 +50,7 @@ use function random_bytes;
 use function random_int;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
+use function realpath;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use function register_shutdown_function;
@@ -203,9 +204,9 @@ final class CoverageRuntime
      */
     private function scanDirectoryForPhpFiles(string $dir): array
     {
-        $dir = rtrim($dir, '/');
+        $dir = realpath(rtrim($dir, '/'));
 
-        if (!is_dir($dir)) {
+        if (false === $dir) {
             return [];
         }
 
@@ -217,9 +218,11 @@ final class CoverageRuntime
 
         /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
-            // Only process regular files with .php extension
-            if ($file->isFile() && 'php' === strtolower($file->getExtension())) {
-                $files[] = $file->getPathname();
+            if ($file->isFile()
+                && 'php' === strtolower($file->getExtension())
+                && false !== $realpath = $file->getRealPath()
+            ) {
+                $files[] = $realpath;
             }
         }
 

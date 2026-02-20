@@ -19,4 +19,5 @@ class InnerSourceClassTest extends TestCase
         Assert::same(-1.23, $source->sub(1, 2.23));
     }
 }
+
 (new InnerSourceClassTest())->run();

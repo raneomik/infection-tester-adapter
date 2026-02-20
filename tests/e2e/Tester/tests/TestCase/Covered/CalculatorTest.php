@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\TestCase\Covered;
 
 require __DIR__ . '/../../bootstrap.php';
 
+use App\Covered\Calculator;
 use Tester\Assert;
 use Tester\TestCase;
-use App\Covered\Calculator;
 
 /**
  * @testCase

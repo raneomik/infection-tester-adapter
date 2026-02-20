@@ -6,8 +6,8 @@ namespace App\Tests\FunctionTest\Covered;
 
 require __DIR__ . '/../bootstrap.php';
 
-use Tester\Assert;
 use App\Covered\Calculator;
+use Tester\Assert;
 
 test('Addition Test', function () {
     $calculator = new Calculator();
@@ -59,4 +59,3 @@ testException('Division by zero', function () {
     \InvalidArgumentException::class,
     'Division by zero',
 );
-

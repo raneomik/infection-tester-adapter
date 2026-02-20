@@ -2,14 +2,11 @@
 
 namespace App\Covered;
 
+use function count;
+
 trait LoggerTrait
 {
     private array $logs = [];
-
-    private function log(string $message): void
-    {
-        $this->logs[] = $message;
-    }
 
     public function getLogs(): array
     {
@@ -23,6 +20,11 @@ trait LoggerTrait
 
     public function hasLogs(): bool
     {
-        return count($this->logs) > 0;
+        return 0 < count($this->logs);
+    }
+
+    private function log(string $message): void
+    {
+        $this->logs[] = $message;
     }
 }

@@ -17,7 +17,8 @@
       "src/Override/test_framework_config_alias.php"
     ],
     "exclude-from-classmap": [
-      "/tests/e2e"
+      "/tests/e2e",
+      "/tests/phpunit/Fixtures"
     ]
   },
   "autoload-dev": {

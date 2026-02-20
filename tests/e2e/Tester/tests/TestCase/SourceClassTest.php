@@ -5,6 +5,7 @@ namespace App\Tests\TestCase;
 require __DIR__ . '/../bootstrap.php';
 
 use App\SourceClass;
+use function round;
 use Tester\Assert;
 use Tester\TestCase;
 
@@ -20,9 +21,6 @@ class SourceClassTest extends TestCase
         Assert::same(3.0, $source->add(1, 2));
     }
 
-    /**
-     * @testCase
-     */
     public function testFloatAddition(): void
     {
         $source = new SourceClass();

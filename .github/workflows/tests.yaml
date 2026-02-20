@@ -21,13 +21,14 @@ jobs:
 
         strategy:
             matrix:
-                php-version: [ '8.3', '8.4', '8.5' ]
-                coverage-driver: [ pcov ]
+                php-version: [ '8.4', '8.5' ]
+                coverage-driver: [ pcov, xdebug ]
                 symfony-require:
                     - '6.4.*'
                     - '7.4.*'
+                    - '8.0.*'
                 exclude:
-                    -   php-version: '8.1'
+                    -   php-version: '8.3'
                         symfony-require: '^7'
 
         name: Unit tests on PHP ${{ matrix.php-version }} with Symfony ${{ matrix.symfony-require }} (${{ matrix.coverage-driver }})
@@ -64,6 +65,10 @@ jobs:
             -   name: Install dependencies
                 run: composer update --optimize-autoloader --no-interaction --no-progress --prefer-dist
 
+            -  name: Enabling Xdebug
+               if: ${{ matrix.coverage-driver == 'xdebug' }}
+               run: echo "XDEBUG_MODE=coverage" >> $GITHUB_ENV
+
             -   name: Run tests and generate coverage
                 run: make test-unit
 
@@ -84,7 +89,7 @@ jobs:
 
         steps:
             -   name: Checkout
-                uses: actions/checkout@v6 # v6.0.2
+                uses: actions/checkout@v6
 
             -   name: Setup PHP
                 uses: shivammathur/setup-php@v2
@@ -92,6 +97,10 @@ jobs:
                     php-version: ${{ matrix.php-version }}
                     coverage: ${{ matrix.coverage-driver }}
                     tools: composer:v2
+
+            -  name: Enabling Xdebug
+               if: ${{ matrix.coverage-driver == 'xdebug' }}
+               run: echo "XDEBUG_MODE=coverage" >> $GITHUB_ENV
 
             -   name: Run E2E tests
                 env:

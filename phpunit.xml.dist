@@ -13,6 +13,7 @@
 	<testsuites>
 		<testsuite name="Main Test Suite">
 			<directory>tests/phpunit</directory>
+			<exclude>tests/phpunit/Fixtures</exclude>
 		</testsuite>
 	</testsuites>
 	

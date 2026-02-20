@@ -39,6 +39,7 @@ namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 use function count;
 use DOMDocument;
 use DOMElement;
+use function file_get_contents;
 use function is_file;
 use function number_format;
 use function pathinfo;
@@ -46,8 +47,6 @@ use const PATHINFO_FILENAME;
 use function preg_match;
 use function str_contains;
 use function str_replace;
-use Symfony\Component\Filesystem\Exception\IOException;
-use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Formats JUnit XML from Tester format to PHPUnit-compatible format.
@@ -56,8 +55,8 @@ use Symfony\Component\Filesystem\Filesystem;
  *   <testcase classname="/path/Test.php method=testMethod" name="..."/>
  *
  * Into PHPUnit's hierarchical structure:
- *   <testsuite name="Namespace\TestClass">
- *     <testcase name="testMethod" class="Namespace\TestClass" classname="Namespace\TestClass"/>
+ *   <testsuite name="Namespace\TestClass" assertions="2" tests="1" time="0.001">
+ *     <testcase name="testMethod" class="Namespace\TestClass" classname="Namespace\TestClass" assertions="2" time="0.001"/>
  *   </testsuite>
  */
 final class JUnitFormatter
@@ -66,13 +65,14 @@ final class JUnitFormatter
      * Cache for extracted class info to avoid re-reading same files.
      * Key: file path, Value: [class, namespace]
      *
-     * @var array<string, array{class: string, namespace: string}>
+     * @var array<string, array{class: string, namespace: string, assertions: array<string, int>}>
      */
     private static array $classInfoCache = [];
 
     private function __construct(
-        private string $junitPath,
-        private Filesystem $filesystem = new Filesystem(),
+        private readonly string $junitPath,
+        private readonly string $outputPath,
+        private readonly AssertionsCounter $assertsCounter,
     ) {
         // Clear cache at the start of each format operation
         self::$classInfoCache = [];
@@ -85,18 +85,24 @@ final class JUnitFormatter
      *
      * @return bool True if formatting succeeded, false otherwise
      */
-    public static function format(string $junitPath): bool
+    public static function format(string $junitPath, ?string $outputPath = null): bool
     {
-        $self = new self($junitPath);
+        $self = new self(
+            $junitPath,
+            $outputPath ?? $junitPath,
+            new AssertionsCounter(),
+        );
 
         return $self->doFormat();
     }
 
     private function doFormat(): bool
     {
-        $content = $this->filesystem->readFile($this->junitPath);
+        $content = @file_get_contents($this->junitPath);
 
-        if (!str_contains($content, '<testcase')) {
+        if (
+            false === $content
+            || !str_contains($content, '<testcase')) {
             return false;
         }
 
@@ -117,13 +123,22 @@ final class JUnitFormatter
         $groupedTestcases = $this->groupTestcasesByClass($testcases);
         $newDom = $this->buildPhpUnitStructure($groupedTestcases);
 
-        return false !== $newDom->save($this->junitPath);
+        return false !== $newDom->save($this->outputPath);
     }
 
     /**
      * Extract all testcase elements from the document.
      *
-     * @return array<int, array{element: DOMElement, parsed: array{file: string, method: string, class: string, namespace: string}}>
+     * @return array<int, array{
+     *     element: DOMElement,
+     *     parsed: array{
+     *         file: string,
+     *         method: string,
+     *         class: string,
+     *         namespace: string,
+     *         assertions: array<string, int>,
+     *     }
+     * }>
      */
     private function extractTestcases(DOMDocument $domDocument): array
     {
@@ -151,17 +166,14 @@ final class JUnitFormatter
     /**
      * Parse Tester testcase format.
      *
-     * @return array{file: string, method: string, class: string, namespace: string}|null
+     * @return array{file: string, method: string, class: string, namespace: string, assertions: array<string, int>}|null
      */
     private function parseTesterFormat(string $attribute): ?array
     {
-        // Pattern 1: "/path/to/Test.php method=testMethod" (TestCase)
         if (0 < preg_match('#^(.+\.php)\s+method=(\w+)$#', $attribute, $matches)) {
             $filePath = $matches[1];
             $method = $matches[2];
-        }
-        // Pattern 2: "/path/to/Test.php" (procédural ou test() function)
-        elseif (0 < preg_match('#^(.+\.php)$#', $attribute, $matches)) {
+        } elseif (0 < preg_match('#^(.+\.php)$#', $attribute, $matches)) {
             $filePath = $matches[1];
             $method = 'test';
         } else {
@@ -176,13 +188,14 @@ final class JUnitFormatter
             'method' => $method,
             'class' => $classInfo['class'],
             'namespace' => $classInfo['namespace'],
+            'assertions' => $classInfo['assertions'],
         ];
     }
 
     /**
      * Extract class name and namespace from a PHP file.
      *
-     * @return array{class: string, namespace: string}
+     * @return array{class: string, namespace: string, assertions: array<string, int>}
      */
     private function extractClassInfo(string $filePath): array
     {
@@ -195,15 +208,16 @@ final class JUnitFormatter
         $default = [
             'class' => pathinfo($filePath, PATHINFO_FILENAME),
             'namespace' => '',
+            'assertions' => ['total' => 0],
         ];
 
         if (!is_file($filePath)) {
             return self::$classInfoCache[$filePath] = $default;
         }
 
-        try {
-            $content = $this->filesystem->readFile($filePath);
-        } catch (IOException) {
+        $content = @file_get_contents($filePath);
+
+        if (false === $content) {
             return self::$classInfoCache[$filePath] = $default;
         }
 
@@ -228,15 +242,16 @@ final class JUnitFormatter
         return self::$classInfoCache[$filePath] = [
             'class' => $className,
             'namespace' => $namespace,
+            'assertions' => $this->assertsCounter->countAssertions($content),
         ];
     }
 
     /**
      * Group testcases by their class (full namespace + class name).
      *
-     * @param array<int, array{element: DOMElement, parsed: array{file: string, method: string, class: string, namespace: string}}> $testcases
+     * @param array<int, array{element: DOMElement, parsed: array{file: string, method: string, class: string, namespace: string, assertions: array<string, int>}}> $testcases
      *
-     * @return array<string, array{namespace: string, class: string, file: string, tests: array<int, array{element: DOMElement, method: string}>}>
+     * @return array<string, array{namespace: string, class: string, file: string, assertions: int, tests: array<int, array{element: DOMElement, method: string, assertions: int}>}>
      */
     private function groupTestcasesByClass(array $testcases): array
     {
@@ -253,13 +268,15 @@ final class JUnitFormatter
                     'namespace' => $parsed['namespace'],
                     'class' => $parsed['class'],
                     'file' => $parsed['file'],
+                    'assertions' => $parsed['assertions']['total'],
                     'tests' => [],
                 ];
             }
 
             $grouped[$fullClass]['tests'][] = [
                 'element' => $testcase['element'],
-                'method' => $parsed['method'],
+                'method' => $method = $parsed['method'],
+                'assertions' => $parsed['assertions'][$method] ?? 0,
             ];
         }
 
@@ -269,7 +286,7 @@ final class JUnitFormatter
     /**
      * Build PHPUnit-style hierarchical structure.
      *
-     * @param array<string, array{namespace: string, class: string, file: string, tests: array<int, array{element: DOMElement, method: string}>}> $groupedTestcases
+     * @param array<string, array{namespace: string, class: string, file: string, assertions: int, tests: array<int, array{element: DOMElement, method: string, assertions: int}>}> $groupedTestcases
      */
     private function buildPhpUnitStructure(array $groupedTestcases): DOMDocument
     {
@@ -287,7 +304,7 @@ final class JUnitFormatter
 
         // Accumulate real statistics from testcases
         $totalTests = 0;
-        $totalAssertions = 0;
+        $totalAsserts = 0;
         $totalErrors = 0;
         $totalFailures = 0;
         $totalSkipped = 0;
@@ -299,10 +316,6 @@ final class JUnitFormatter
             // Count real errors/failures/skipped from testcases
             foreach ($classData['tests'] as $test) {
                 $element = $test['element'];
-
-                // Count assertions (default to 1 if not specified)
-                $assertions = $element->getAttribute('assertions');
-                $totalAssertions += '' !== $assertions ? (int) $assertions : 1;
 
                 // Check for errors/failures/skipped
                 if (0 < $element->getElementsByTagName('error')->length) {
@@ -317,13 +330,17 @@ final class JUnitFormatter
                     ++$totalSkipped;
                 }
             }
+
+            if (0 < ($asserts = $classData['assertions'])) {
+                $totalAsserts += $asserts;
+            }
         }
 
         $mainTestsuite->setAttribute('tests', (string) $totalTests);
-        $mainTestsuite->setAttribute('assertions', (string) $totalAssertions);
         $mainTestsuite->setAttribute('errors', (string) $totalErrors);
         $mainTestsuite->setAttribute('failures', (string) $totalFailures);
         $mainTestsuite->setAttribute('skipped', (string) $totalSkipped);
+        $mainTestsuite->setAttribute('assertions', (string) $totalAsserts);
 
         $rootTestsuites->appendChild($mainTestsuite);
 
@@ -334,10 +351,10 @@ final class JUnitFormatter
 
             // Use absolute path like PHPUnit does
             $classTestsuite->setAttribute('file', $classData['file']);
+            $classTestsuite->setAttribute('assertions', (string) $classData['assertions']);
 
             // Count real statistics for this class
             $classTests = count($classData['tests']);
-            $classAssertions = 0;
             $classErrors = 0;
             $classFailures = 0;
             $classSkipped = 0;
@@ -353,17 +370,7 @@ final class JUnitFormatter
                 $newTestcase->setAttribute('file', $classData['file']);
                 $newTestcase->setAttribute('class', $fullClass);
                 $newTestcase->setAttribute('classname', str_replace('\\', '.', $fullClass)); // Convert backslashes to dots
-
-                // Preserve assertions count
-                $assertions = $oldTestcase->getAttribute('assertions');
-
-                if ('' !== $assertions) {
-                    $newTestcase->setAttribute('assertions', $assertions);
-                    $classAssertions += (int) $assertions;
-                } else {
-                    $newTestcase->setAttribute('assertions', '1');
-                    ++$classAssertions;
-                }
+                $newTestcase->setAttribute('assertions', (string) $test['assertions']);
 
                 // Preserve time if available
                 $time = $oldTestcase->getAttribute('time');
@@ -406,7 +413,6 @@ final class JUnitFormatter
             }
 
             $classTestsuite->setAttribute('tests', (string) $classTests);
-            $classTestsuite->setAttribute('assertions', (string) $classAssertions);
             $classTestsuite->setAttribute('errors', (string) $classErrors);
             $classTestsuite->setAttribute('failures', (string) $classFailures);
             $classTestsuite->setAttribute('skipped', (string) $classSkipped);

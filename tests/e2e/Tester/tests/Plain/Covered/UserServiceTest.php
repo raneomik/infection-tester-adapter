@@ -8,7 +8,6 @@ require __DIR__ . '/../../bootstrap.php';
 
 use App\Covered\UserService;
 use Tester\Assert;
-use Tester\TestCase;
 
 $service = new UserService();
 Assert::true($service->addUser('John Doe', 'john@example.com'));

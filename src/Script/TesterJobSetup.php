@@ -56,7 +56,7 @@ final class TesterJobSetup
     {
         $coverageDriverProvider = new CoverageDriverProvider();
 
-        foreach ($coverageDriverProvider->phpIniRunnerOptions($pcovDir) as $option => $value) {
+        foreach ($coverageDriverProvider->runnerOptions($pcovDir) as $option => $value) {
             $runner->addPhpIniOption($option, $value);
         }
 

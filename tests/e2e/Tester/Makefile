@@ -27,7 +27,7 @@ tester: vendor/autoload.php
 
 .PHONY: tester_coverage
 tester_coverage: 	## Executes the tests with code coverage
-tester_coverage: vendor/autoload.php
+tester_coverage: vendor/autoload.php var/infection/infection
 	XDEBUG_MODE=coverage vendor/bin/tester $(suite) \
 		--coverage var/infection/infection/index.xml --coverage-src src \
 		-o junit:var/infection/infection/junit.xml \
@@ -52,3 +52,6 @@ vendor/autoload.php:
 composer.lock: composer.json
 	composer update
 	touch -c $@
+
+var/infection/infection:
+	mkdir -p var/infection/infection

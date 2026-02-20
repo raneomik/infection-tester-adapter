@@ -39,6 +39,7 @@ namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 use function basename;
 use function file_exists;
 use function file_get_contents;
+use function in_array;
 use function preg_match;
 use function sprintf;
 use function str_contains;
@@ -66,7 +67,7 @@ final readonly class CoveringTestIdentifier
             }
 
             if (str_ends_with($includedFile, 'Test.php') || str_ends_with($includedFile, 'test.php')) {
-                $testId = $this->extractTestIdFromFile($includedFile);
+                $testId = $this->extractTestId($includedFile);
 
                 if (null !== $testId) {
                     return $testId;
@@ -74,13 +75,13 @@ final readonly class CoveringTestIdentifier
             }
         }
 
-        return 'global-coverage';
+        return 'not-to-cover';
     }
 
     /**
      * Extract test identifier from a test file path.
      */
-    private function extractTestIdFromFile(string $filePath): ?string
+    private function extractTestId(string $filePath): ?string
     {
         if (!file_exists($filePath)) {
             return null;
@@ -92,52 +93,63 @@ final readonly class CoveringTestIdentifier
             return null;
         }
 
-        $className = $this->extractClass($content);
+        $namespace = '';
+
+        if (0 < preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $matches)) {
+            $namespace = $matches[1];
+        }
+
+        $className = '';
+
+        if (0 < preg_match('/^\s*(?:final\s+)?(?:abstract\s+)?class\s+([a-zA-Z0-9_]+)/m', $content, $matches)) {
+            $className = $matches[1];
+        }
 
         // TestCase format: extract method from --method=xxx in argv
         $methodName = $this->extractMethodFromArgv();
 
-        if ('' !== $methodName) {
+        $basename = basename($filePath, '.php');
+        $basename = basename($basename, '.phpt');
+
+        return $this->getTestId($methodName, $className, $namespace, $basename);
+    }
+
+    private function getTestId(
+        string $methodName,
+        string $className,
+        string $namespace,
+        string $basename,
+    ): string {
+        if (
+            !in_array('', [$methodName, $className, $namespace], true)
+        ) {
             return sprintf(
                 '%s::%s',
-                $className,
+                $namespace . '\\' . $className,
                 $methodName,
             );
         }
 
-        // PHPT procedural or test() function format
-        // Use filename as identifier since there's no class
-        $basename = basename($filePath, '.php');
-        $basename = basename($basename, '.phpt');
-
-        return sprintf(
-            '%s::%s',
-            '' !== $className ? $className . '\\' . $basename : $basename,
-            'test',
-        );
-    }
-
-    private function extractClass(string $testContent): string
-    {
-        // Extract namespace
-        $namespace = '';
-
-        if (0 < preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $testContent, $matches)) {
-            $namespace = $matches[1];
+        if (
+            '' !== $className
+            && '' !== $namespace
+        ) {
+            return sprintf(
+                '%s::%s',
+                $namespace . '\\' . $className,
+                'test',
+            );
         }
 
-        // Extract class name
-        $className = '';
-
-        if (0 < preg_match('/^\s*(?:final\s+)?(?:abstract\s+)?class\s+([a-zA-Z0-9_]+)/m', $testContent, $matches)) {
-            $className = $matches[1];
+        if ('' !== $namespace) {
+            return sprintf(
+                '%s::%s',
+                $namespace . '\\' . $basename,
+                'test',
+            );
         }
 
-        return match (true) {
-            '' !== $className && '' !== $namespace => $namespace . '\\' . $className,
-            '' !== $namespace => $namespace,
-            default => '',
-        };
+        return sprintf('%s::%s', $basename, 'test');
     }
 
     /**

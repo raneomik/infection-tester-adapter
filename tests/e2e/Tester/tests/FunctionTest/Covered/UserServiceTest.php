@@ -55,6 +55,7 @@ test('Remove inexistent User Test', function () {
 test('Get user test', function () {
     $service = new UserService();
     $service->addUser('John Doe', 'john@example.com');
+
     $user = $service->getUser('john@example.com');
     Assert::type('array', $user);
     Assert::same('John Doe', $user['name']);
@@ -76,6 +77,7 @@ test('User existence check test', function () {
 test('Get logs test', function () {
     $service = new UserService();
     $service->addUser('John Doe', 'john@example.com');
+
     $logs = $service->getLogs();
     Assert::type('array', $logs);
     Assert::count(1, $logs);

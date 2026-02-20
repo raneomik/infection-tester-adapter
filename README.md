@@ -7,11 +7,11 @@
 [![Mutation testing badge](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Franeomik%2Finfection-tester-adapter%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/raneomik/infection-tester-adapter/main)
 
 > _Disclaimer: AI agent experiment - chat-gpt5.2 & claude sonnet 4.5 wrote ~60-75% of this project, by my lack of knowledge on this topic and lack of time to learn..._
-> _I thought it would be interesting to ask AI "Hey, I discovered [this framework][nette], and it comes with its [own testing framework][tester]. But I love Infection and its metrics to push you to test your tests, and feel quite sorry it does not support it yet... Are we in ? - yes, Here's your code"_
+> _I thought it would be interesting to ask AI "Hey, I discovered [this framework][nette], and it comes with its [own testing framework][tester]. But I love Infection and its metrics to push you to test your tests, and could be cool to add an adapter to it... Are we in ? - yes, Here's your code"_
 > _(it wasn't this simple, [here's some copilot's very verbose journals & reports](docs/copilot-report) for french speakers - it's a real mess, sorry, all dev problems seem to be included)_
 > _and share the result._
 >
-> _The remaining ~30% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big Shoutout to Maks Rafalko & Infection community for this amazing tool_
+> _The remaining ~25% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big shoutout to Maks Rafalko & Infection community for this amazing tool_
 
 This package provides test framework adapter of [Tester][tester] for [infection][infection].
 

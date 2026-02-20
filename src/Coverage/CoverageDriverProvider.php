@@ -36,10 +36,8 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
-use function class_exists;
 use function extension_loaded;
 use function is_string;
-use const PHP_SAPI;
 use SebastianBergmann\CodeCoverage\Driver\Driver;
 use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
 use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
@@ -67,15 +65,6 @@ final readonly class CoverageDriverProvider
             return new PcovDriver($filter);
         }
 
-        if ('phpdbg' === $this->driver) {
-            $phpdbgDriverClass = 'SebastianBergmann\\CodeCoverage\\Driver\\PhpdbgDriver';
-
-            if (class_exists($phpdbgDriverClass)) {
-                /* @phpstan-ignore-next-line */
-                return new $phpdbgDriverClass($filter);
-            }
-        }
-
         if ('xdebug' === $this->driver) {
             return new XdebugDriver($filter);
         }
@@ -90,7 +79,6 @@ final readonly class CoverageDriverProvider
     {
         return match ($this->driver) {
             'pcov' => $this->pcovIniOptions($pcovDir),
-            'phpdbg' => [], // PHPDBG doesn't need INI options
             'xdebug' => $this->xdebugIniOptions(),
             default => [],
         };
@@ -99,11 +87,10 @@ final readonly class CoverageDriverProvider
     /**
      * @return string[]
      */
-    public function phpIniRunnerOptions(?string $pcovDir = null): array
+    public function runnerOptions(?string $pcovDir = null): array
     {
         return match ($this->driver) {
             'pcov' => $this->pcovRunnerOptions($pcovDir),
-            'phpdbg' => [], // PHPDBG doesn't need INI options
             'xdebug' => $this->xdebugRunnerOptions(),
             default => [],
         };
@@ -119,10 +106,6 @@ final readonly class CoverageDriverProvider
     {
         if (extension_loaded('pcov')) {
             return 'pcov';
-        }
-
-        if (PHP_SAPI === 'phpdbg') {
-            return 'phpdbg';
         }
 
         if (extension_loaded('xdebug')) {

@@ -3,11 +3,12 @@
 namespace App\Tests\TestCase\Covered;
 
 require __DIR__ . '/../../bootstrap.php';
+
 require_once __DIR__ . '/../../../src/Covered/functions.php';
 
+use function App\Covered\formatName;
 use Tester\Assert;
 use Tester\TestCase;
-use function App\Covered\formatName;
 
 /**
  * @testCase

@@ -1,5 +1,6 @@
 *vendor/
 *var/
+*output/
 infection.log
 infection-cache/
 composer.lock

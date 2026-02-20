@@ -14,17 +14,15 @@ touch error.log
 for dir in  */
 do
     cd "$dir"
-    echo -e "\n$dir\n";
 
     if [ -f composer.json ] || [ -f composer.lock ]
     then
         composer install > /dev/null 2>&1
     fi
 
-    output="$(bash run_tests.bash)"
+    bash run_tests.bash
 
-    if [ $? != 0 ]
-    then
+    if [ $? != 0 ]; then
         failure="true"
         echo "$dir" >> ../error.log
         echo "$output" >> ../error.log

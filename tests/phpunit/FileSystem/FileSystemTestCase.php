@@ -93,7 +93,7 @@ abstract class FileSystemTestCase extends TestCase
         self::assertSame($expectedPerms, substr(sprintf('%o', fileperms($path)), -4));
     }
 
-    public static function asserFileContains(string $expectedString, string $filepath): void
+    public static function assertFileContains(string $expectedString, string $filepath): void
     {
         self::assertStringContainsString($expectedString, (string) @file_get_contents($filepath));
     }

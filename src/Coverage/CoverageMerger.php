@@ -37,17 +37,19 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
 use function class_exists;
+use function file_get_contents;
 use function fwrite;
-use function glob;
 use function is_file;
 use function is_string;
 use const PHP_EOL;
-use function rtrim;
+use function Pipeline\take;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Report\Xml\Facade as PhpUnitXmlFacade;
+use SplFileInfo;
 use function sprintf;
 use const STDERR;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 use function unserialize;
 
 /**
@@ -55,9 +57,12 @@ use function unserialize;
  */
 final readonly class CoverageMerger
 {
+    private Finder $finder;
+
     public function __construct(
         private Filesystem $filesystem = new Filesystem(),
     ) {
+        $this->finder = Finder::create();
     }
 
     /**
@@ -126,9 +131,14 @@ final readonly class CoverageMerger
      */
     private function findFragmentFiles(string $fragmentDir): array
     {
-        $result = glob(rtrim($fragmentDir, '/') . '/*.phpser');
-
-        return false !== $result ? $result : [];
+        return take(// @phpstan-ignore-line
+            $this->finder->files()
+                ->name('*.phpser')
+                ->in($fragmentDir)
+        )
+            ->map(static fn (SplFileInfo $file): string => $file->getPathname())
+            ->toList()
+        ;
     }
 
     /**
@@ -151,9 +161,9 @@ final readonly class CoverageMerger
      */
     private function loadFragment(string $file): ?CodeCoverage
     {
-        $data = $this->filesystem->readFile($file);
+        $data = @file_get_contents($file);
 
-        if ('' === $data) {
+        if (false === $data) {
             return null;
         }
 

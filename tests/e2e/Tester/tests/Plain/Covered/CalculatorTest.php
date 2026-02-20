@@ -6,8 +6,9 @@ namespace App\Tests\Plain\Covered;
 
 require __DIR__ . '/../../bootstrap.php';
 
-use Tester\Assert;
 use App\Covered\Calculator;
+use InvalidArgumentException;
+use Tester\Assert;
 
 $calculator = new Calculator();
 Assert::same(5, $calculator->add(2, 3));
@@ -36,7 +37,7 @@ Assert::same(5, $calculator->getAbsolute(-5));
 Assert::same(0, $calculator->getAbsolute(0));
 
 Assert::exception(
-    fn() => $calculator->divide(5, 0),
-    \InvalidArgumentException::class,
+    static fn (): float => $calculator->divide(5, 0),
+    InvalidArgumentException::class,
     'Division by zero',
 );

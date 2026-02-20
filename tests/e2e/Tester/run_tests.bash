@@ -5,15 +5,15 @@ tputx () {
 }
 
 run () {
-    local INFECTION=${1}
+    local suite=${1}
     local PHPARGS=${2}
 
-    if [ "$DRIVER" = "phpdbg" ]
-    then
-        phpdbg $PHPARGS -qrr $INFECTION
-    else
-        php $PHPARGS $INFECTION
-    fi
+    php $PHPARGS vendor/bin/infection \
+      --no-ansi \
+      --threads=max \
+      --with-uncovered \
+      --show-mutations=0 \
+      --test-framework-options=${suite}
 }
 
 cd "$(dirname "$0")"
@@ -26,14 +26,11 @@ fi
 # Ensure directories for coverage output exist
 mkdir -p var/infection/infection
 
-printf 'Plain suite'
-run "vendor/bin/infection --with-uncovered --threads=max --test-framework-options=tests/Plain"
+run "tests/Plain"
 diff -w expected-output.txt var/infection.log
 
-printf 'FunctionTest suite'
-run "vendor/bin/infection --with-uncovered --threads=max --test-framework-options=tests/FunctionTest"
+run "tests/FunctionTest"
 diff -w expected-output.txt var/infection.log
 
-printf 'TestCase suite'
-run "vendor/bin/infection --with-uncovered --threads=max --test-framework-options=tests/TestCase"
+run "tests/TestCase"
 diff -w expected-output.txt var/infection.log

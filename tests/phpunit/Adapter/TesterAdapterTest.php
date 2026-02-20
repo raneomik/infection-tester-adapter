@@ -43,6 +43,7 @@ use Infection\AbstractTestFramework\Coverage\TestLocation;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandScriptBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilder;
@@ -142,7 +143,7 @@ final class TesterAdapterTest extends FileSystemTestCase
         $commandLine = $testerAdapter->getInitialTestRunCommandLine('blabla', [], false);
 
         self::assertContains($initScript = $this->tmp . '/run-initial-tester.php', $commandLine);
-        self::asserFileContains('blabla', $initScript);
+        self::assertFileContains('blabla', $initScript);
         self::assertFileExists($initScript);
     }
 
@@ -161,9 +162,9 @@ final class TesterAdapterTest extends FileSystemTestCase
 
         self::assertFileExists($expectedConfigPath);
 
-        self::asserFileContains(dirname(__DIR__, 3) . '/vendor/autoload.php', $expectedConfigPath);
-        self::asserFileContains(self::ORIGINAL_FILE_PATH, $expectedConfigPath);
-        self::asserFileContains(self::MUTATED_FILE_PATH, $expectedConfigPath);
+        self::assertFileContains(dirname(__DIR__, 3) . '/vendor/autoload.php', $expectedConfigPath);
+        self::assertFileContains(self::ORIGINAL_FILE_PATH, $expectedConfigPath);
+        self::assertFileContains(self::MUTATED_FILE_PATH, $expectedConfigPath);
     }
 
     public function test_mutant_cmd_line(): string
@@ -191,6 +192,7 @@ final class TesterAdapterTest extends FileSystemTestCase
         return $inlineCmd;
     }
 
+    #[RequiresPhpExtension('pcov')]
     #[Depends('test_mutant_cmd_line')]
     public function test_pcov_ini_options(string $inlineCmd): void
     {
@@ -202,11 +204,12 @@ final class TesterAdapterTest extends FileSystemTestCase
         self::assertStringContainsString('-d pcov.directory', $inlineCmd);
     }
 
+    #[RequiresPhpExtension('xdebug')]
     #[Depends('test_mutant_cmd_line')]
     public function test_xdebug_ini_options(string $inlineCmd): void
     {
-        if (!extension_loaded('xdebug')) {
-            self::markTestSkipped('PCOV extension is not loaded.');
+        if (extension_loaded('pcov')) {
+            self::markTestSkipped('running first in PCOV, even if xdebug loaded');
         }
 
         self::assertStringContainsString('-d xdebug.start_with_request=yes', $inlineCmd);

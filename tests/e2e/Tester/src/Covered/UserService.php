@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Covered;
 
+use function count;
+use function sprintf;
+
 class UserService
 {
     use LoggerTrait;
@@ -14,26 +17,31 @@ class UserService
     {
         if (empty($name) || empty($email)) {
             $this->log('Failed to add user: empty name or email');
+
             return false;
         }
+
         if ($this->userExists($email)) {
-            $this->log("Failed to add user: email {$email} already exists");
+            $this->log(sprintf('Failed to add user: email %s already exists', $email));
+
             return false;
         }
+
         $this->users[$email] = ['name' => $name, 'email' => $email];
-        $this->log("User {$name} added successfully");
+        $this->log(sprintf('User %s added successfully', $name));
+
         return true;
     }
 
     public function removeUser(string $email): bool
     {
         if (!$this->userExists($email)) {
-            $this->log("Failed to remove user: email {$email} not found");
+            $this->log(sprintf('Failed to remove user: email %s not found', $email));
+
             return false;
         }
 
         unset($this->users[$email]);
-
 
         return true;
     }

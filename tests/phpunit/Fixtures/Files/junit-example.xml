@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite errors="0" skipped="0" tests="5" time="0.1" timestamp="2026-02-19T23:36:07">
+    <testcase classname="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/SourceClassTest.php" name="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/SourceClassTest.php"/>
+    <testcase classname="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Covered/UserServiceTest.php" name="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Covered/UserServiceTest.php"/>
+    <testcase classname="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Inner/InnerSourceClassTest.php" name="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Inner/InnerSourceClassTest.php"/>
+    <testcase classname="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Covered/CalculatorTest.php" name="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Covered/CalculatorTest.php"/>
+    <testcase classname="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Covered/FormatNameFunctionTest.php" name="/home/marek/Projects/infection-tester-adapter/tests/e2e/Tester/tests/Plain/Covered/FormatNameFunctionTest.php"/>
+  </testsuite>
+</testsuites>

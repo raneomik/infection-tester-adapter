@@ -46,12 +46,12 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
-use function extension_loaded;
-use const PHP_SAPI;
+use function getenv;
+use function ini_get;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
-use function putenv;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use ReflectionProperty;
 use SebastianBergmann\CodeCoverage\Driver\Driver;
@@ -62,95 +62,74 @@ use SebastianBergmann\CodeCoverage\Filter;
 #[Group('unit')]
 final class CoverageDriverProviderTest extends TestCase
 {
-    public function test_it_loads_driver(): void
+    #[RequiresPhpExtension('pcov')]
+    public function test_it_loads_pcov_driver(): void
     {
-        $expectedDriver = match (true) {
-            extension_loaded('pcov') => PcovDriver::class,
-            extension_loaded('xdebug') => XdebugDriver::class,
-            PHP_SAPI === 'phpdbg' => 'phpdbg',
-            default => null,
-        };
+        $provider = $this->createProvider('pcov');
+        self::assertInstanceOf(PcovDriver::class, $provider->coverageDriver(new Filter()));
+    }
 
-        if (XdebugDriver::class === $expectedDriver) {
-            putenv('XDEBUG_MODE=coverage');
+    #[RequiresPhpExtension('xdebug')]
+    public function test_it_loads_xdebug_driver(): void
+    {
+        if (
+            'coverage' !== getenv('XDEBUG_MODE')
+            || 'coverage' !== ini_get('xdebug.mode')
+        ) {
+            self::markTestSkipped('Xdebug is not in coverage mode.');
         }
 
-        $coverageDriverProvider = $this->createProvider();
-        self::assertInstanceOf(Driver::class, $coverageDriverProvider->coverageDriver(new Filter()));
+        $provider = $this->createProvider('xdebug');
+        self::assertInstanceOf(XdebugDriver::class, $provider->coverageDriver(new Filter()));
     }
 
     /**
-     * @return iterable<array<string, (array<mixed> | string)>>
+     * @return iterable<array{
+     *     driver: string,
+     *     iniOptions: string[],
+     *     runnerOptions: array<string, string>
+     * }>
      */
-    public static function iniTestCases(): iterable
+    public static function driverOptionCases(): iterable
     {
-        yield 'pcov ini' => [
+        yield [
             'driver' => 'pcov',
-            'options' => [
+            'iniOptions' => [
                 '-d', 'pcov.enabled=1',
                 '-d', 'pcov.directory=test',
             ],
-        ];
-
-        yield 'xdebug ini' => [
-            'driver' => 'xdebug',
-            'options' => [
-                '-d', 'xdebug.mode=coverage',
-                '-d', 'xdebug.start_with_request=yes',
-            ],
-        ];
-
-        yield 'phpdbg ini' => [
-            'driver' => 'phpdbg',
-            'options' => [],
-        ];
-    }
-
-    /**
-     * @param string[] $options
-     */
-    #[DataProvider('iniTestCases')]
-    public function test_it_provides_ini_options(string $driver, array $options): void
-    {
-        $coverageDriverProvider = $this->createProvider($driver);
-        self::assertSame($options, $coverageDriverProvider->phpIniOptions('test'));
-    }
-
-    /**
-     * @return iterable<array<array<string, mixed>, mixed>>
-     */
-    public static function iniRunnerTestCases(): iterable
-    {
-        yield 'pcov runner' => [
-            'driver' => 'pcov',
-            'options' => [
+            'runnerOptions' => [
                 'pcov.enabled' => '1',
                 'pcov.directory' => 'test',
             ],
         ];
 
-        yield 'xdebug runner' => [
+        yield [
             'driver' => 'xdebug',
-            'options' => [
+            'iniOptions' => [
+                '-d', 'xdebug.mode=coverage',
+                '-d', 'xdebug.start_with_request=yes',
+            ],
+            'runnerOptions' => [
                 'xdebug.mode' => 'coverage',
                 'xdebug.start_with_request' => 'yes',
             ],
         ];
-
-        yield 'phpdbg' => [
-            'driver' => 'phpdbg',
-            'options' => [],
-        ];
     }
 
     /**
-     * @param array<string, string> $options
+     * @param string[] $iniOptions
+     * @param array<string, string> $runnerOptions
      */
-    #[DataProvider('iniRunnerTestCases')]
-    public function test_it_provides_runner_options(string $driver, array $options): void
-    {
+    #[DataProvider('driverOptionCases')]
+    public function test_it_provides_driver_options(
+        string $driver,
+        array $iniOptions,
+        array $runnerOptions,
+    ): void {
         $coverageDriverProvider = $this->createProvider($driver);
-        self::assertSame($options, $coverageDriverProvider->phpIniRunnerOptions('test'));
+        self::assertSame($iniOptions, $coverageDriverProvider->phpIniOptions('test'));
+        self::assertSame($runnerOptions, $coverageDriverProvider->runnerOptions('test'));
     }
 
     private function createProvider(?string $driver = null): CoverageDriverProvider

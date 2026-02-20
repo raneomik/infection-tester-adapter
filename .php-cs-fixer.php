@@ -51,6 +51,7 @@ $finder = Finder::create()
         '.github',
         'build',
         'tests/e2e',
+        'tests/phpunit/Fixtures',
         'var',
     ])
     ->ignoreDotFiles(false)
