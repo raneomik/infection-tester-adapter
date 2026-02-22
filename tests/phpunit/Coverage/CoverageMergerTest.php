@@ -47,8 +47,8 @@ declare(strict_types=1);
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
 use function dirname;
+use function extension_loaded;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use RuntimeException;
@@ -57,15 +57,20 @@ use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 #[Group('unit')]
 final class CoverageMergerTest extends FileSystemTestCase
 {
-    #[RequiresPhpExtension('pcov')]
     public function test_it_merges_fragments(): void
     {
         $merger = new CoverageMerger();
 
+        $fragDir = dirname(__DIR__) . '/Fixtures/Files/fragments/xdebug';
+
+        if (extension_loaded('pcov')) {
+            $fragDir = dirname(__DIR__) . '/Fixtures/Files/fragments/pcov';
+        }
+
         self::assertDirectoryDoesNotExist($this->tmp . '/coverage-xml');
 
         $out = $merger->merge(
-            dirname(__DIR__) . '/Fixtures/Files/fragments',
+            $fragDir,
             $this->tmp . '/coverage-xml',
         );
 
