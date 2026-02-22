@@ -40,10 +40,12 @@ use function array_map;
 use function array_unique;
 use function dirname;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
-use function is_file;
+use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\MutationBootstrapTemplate;
+use Raneomik\InfectionTestFramework\Tester\Script\Template\MutationWrapperTemplate;
 use function sprintf;
+use Symfony\Component\Filesystem\Filesystem;
 use function trim;
 
 /**
@@ -55,7 +57,48 @@ final readonly class MutationConfigBuilder
     public function __construct(
         private string $tmpDir,
         private string $projectDir,
+        private Filesystem $filesystem = new Filesystem(),
+        private CommandLineBuilder $commandLineBuilder = new CommandLineBuilder(),
     ) {
+    }
+
+    /**
+     * @param string[] $srcDirs
+     * @param TestLocation[] $coverageTests
+     */
+    public function prepareMutant(
+        string $testFrameworkExecutable,
+        array $srcDirs,
+        array $coverageTests,
+        string $mutatedFilePath,
+        string $mutationHash,
+        string $mutationOriginalFilePath,
+    ): string {
+        [
+            'path' => $bootstrapPath,
+            'content' => $boostrapContent,
+        ] = $this->createMutationBootstrap(
+            $mutationHash,
+            $mutationOriginalFilePath,
+            $mutatedFilePath,
+        );
+
+        $this->filesystem->dumpFile($bootstrapPath, $boostrapContent);
+
+        $commandParts = $this->commandLineBuilder->build(
+            $testFrameworkExecutable,
+            $this->buildExtraArgs($srcDirs, $bootstrapPath),
+            $this->buildMutantArguments($coverageTests),
+        );
+
+        [
+            'path' => $wrapperPath,
+            'content' => $wrapperContent,
+        ] = $this->createMutationWrapper($mutationHash, $commandParts);
+
+        $this->filesystem->dumpFile($wrapperPath, $wrapperContent);
+
+        return $wrapperPath;
     }
 
     /**
@@ -63,7 +106,7 @@ final readonly class MutationConfigBuilder
      *
      * @return array{path: string, content: string}
      */
-    public function createMutationBootstrap(
+    private function createMutationBootstrap(
         string $mutationHash,
         string $originalFilePath,
         string $mutatedFilePath,
@@ -74,7 +117,7 @@ final readonly class MutationConfigBuilder
             $mutatedFilePath,
         );
 
-        $bootstrapPath = sprintf('%s/bootstrap-mutant-%s.php', $this->tmpDir, $mutationHash);
+        $bootstrapPath = sprintf('%s/mutant/bootstrap-%s.php', $this->tmpDir, $mutationHash);
 
         return [
             'path' => $bootstrapPath,
@@ -83,35 +126,21 @@ final readonly class MutationConfigBuilder
     }
 
     /**
-     * Create output directory for mutant test results.
-     */
-    public function createOutputDirectory(string $mutationHash): string
-    {
-        return sprintf('%s/%s', $this->tmpDir, $mutationHash);
-    }
-
-    /**
-     * Build Tester command-line arguments for mutant execution.
+     * Create a wrapper with additional output so infection can identify killedBy tests.
      *
-     * @param TestLocation[] $coverageTests Tests that cover the mutated code
+     * @param string[] $commandParts
      *
-     * @return string[]
+     * @return array{path: string, content: string}
      */
-    public function buildMutantArguments(
-        string $outputDir,
-        array $coverageTests,
+    private function createMutationWrapper(
+        string $mutationHash,
+        array $commandParts,
     ): array {
-        // DON'T include $baseArguments!
-        // It may contain directory paths (tests/) or discovery options that force Tester
-        // to scan all tests even when we pass specific files, causing 4× slowdown.
-        // For mutants, we only want to run the exact tests that cover the mutated code.
+        $wrapperPath = sprintf('%s/mutant/wrapper-%s.php', $this->tmpDir, $mutationHash);
+
         return [
-            '-j', '1',
-            '-o', sprintf('junit:%s/junit.xml', $outputDir),
-            ...array_unique(array_map(
-                static fn (TestLocation $testLocation): string => $testLocation->getFilePath() ?? '',
-                $coverageTests
-            )),
+            'path' => $wrapperPath,
+            'content' => MutationWrapperTemplate::generate($commandParts, $this->findAutoloadPath()),
         ];
     }
 
@@ -119,11 +148,11 @@ final readonly class MutationConfigBuilder
      * Build PHP extra arguments for PCOV coverage and mutation bootstrap.
      *
      * @param string[] $srcDirs
-     * @param string|null $bootstrapPath Optional mutation bootstrap to prepend
+     * @param string $bootstrapPath mutation bootstrap to prepend
      *
      * @return string[]
      */
-    public function buildExtraArgs(array $srcDirs, ?string $bootstrapPath = null): array
+    private function buildExtraArgs(array $srcDirs, string $bootstrapPath): array
     {
         if ([] === $srcDirs) {
             return [];
@@ -135,26 +164,38 @@ final readonly class MutationConfigBuilder
         $coverageDriverProvider = new CoverageDriverProvider();
         $args = $coverageDriverProvider->phpIniOptions($pcovDir);
 
-        // Add auto-prepend-file for mutation bootstrap
-        if (null !== $bootstrapPath && is_file($bootstrapPath)) {
-            $args[] = '-d';
-            $args[] = sprintf('auto_prepend_file=%s', $bootstrapPath);
-        }
+        $args[] = '-d';
+        $args[] = sprintf('auto_prepend_file=%s', $bootstrapPath);
 
         return $args;
     }
 
     /**
-     * Find path to vendor/autoload.php
+     * Build Tester command-line arguments for mutant execution.
+     *
+     * @param TestLocation[] $coverageTests Tests that cover the mutated code
+     *
+     * @return string[]
      */
+    private function buildMutantArguments(
+        array $coverageTests,
+    ): array {
+        // DON'T include $baseArguments!
+        // It may contain directory paths (tests/) or discovery options that force Tester
+        // to scan all tests even when we pass specific files, causing 4× slowdown.
+        // For mutants, we only want to run the exact tests that cover the mutated code.
+        return [
+            '-j', '1',
+            '-o', 'tap',
+            ...array_unique(array_map(
+                static fn (TestLocation $testLocation): string => $testLocation->getFilePath() ?? '',
+                $coverageTests
+            )),
+        ];
+    }
+
     private function findAutoloadPath(): string
     {
-        $autoloadPath = $this->projectDir . '/vendor/autoload.php';
-
-        if (!is_file($autoloadPath)) {
-            return dirname(__DIR__, 2) . '/vendor/autoload.php';
-        }
-
-        return $autoloadPath;
+        return dirname(__DIR__, 2) . '/vendor/autoload.php';
     }
 }

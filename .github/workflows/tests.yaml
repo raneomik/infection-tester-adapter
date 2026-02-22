@@ -73,6 +73,11 @@ jobs:
                 run: make test-unit
 
             -   name: Upload coverage results to Coveralls
+                if: ${{ 
+                        matrix.coverage-driver == 'xdebug' 
+                        && matrix.symfony-require == '6.4.*'
+                        && matrix.php-version == '8.4'
+                    }}
                 env:
                     COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
                 run: vendor/bin/php-coveralls

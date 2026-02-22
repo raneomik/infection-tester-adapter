@@ -34,57 +34,30 @@
 
 declare(strict_types=1);
 
-namespace Raneomik\InfectionTestFramework\Tester\Script\Template;
+namespace Raneomik\InfectionTestFramework\Tester;
 
-use function sprintf;
-use function var_export;
+use function preg_match;
 
 /**
- * Template for Tester --setup script.
- * This script is loaded by Tester Runner to configure coverage collection.
+ * Minimal implementation that can tell if the tests passed or not from a TAP output.
+ *
+ * @see https://testanything.org/
+ *
+ * @internal
  */
-final class SetupScriptTemplate
+final readonly class TapTestChecker
 {
     /**
-     * Generate the setup script with actual values.
-     *
-     * @param string $autoloadPath Path to the vendor autoload file
-     * @param string $prependFile Path to the coverage prepend script
-     * @param string $srcDir Source directory for PCOV filtering
-     *
-     * @return string PHP script with substituted values
+     * @param string $output output of a test execution following the TAP format
      */
-    public static function build(
-        string $autoloadPath,
-        string $prependFile,
-        string $srcDir,
-    ): string {
-        return sprintf(<<<'PHP'
-<?php
-/**
- * Tester setup script for Infection coverage collection
- * Generated automatically - do not edit
- */
+    public function testsPass(string $output): bool
+    {
+        // TAP format (from -o tap): "not ok ..." means failure
+        if (0 < preg_match('/^(not ok|bail out)\b/m', $output)) {
+            return false;
+        }
 
-declare(strict_types=1);
-
-// Load autoload first
-require_once %s;
-
-// Configure the Tester Runner
-// Note: $runner is available via use() in the closure from CliTester
-if (isset($runner) && $runner instanceof \Tester\Runner\Runner) {
-    \Raneomik\InfectionTestFramework\Tester\Script\TesterJobSetup::configure(
-        $runner,
-        %s,
-        %s,
-    );
-}
-
-PHP,
-            var_export($autoloadPath, true),
-            var_export($prependFile, true),
-            var_export($srcDir, true),
-        );
+        // TAP format: "1..N" present with no "not ok" means all passed
+        return 0 < preg_match('/^\d+\.\.\d+$/m', $output);
     }
 }

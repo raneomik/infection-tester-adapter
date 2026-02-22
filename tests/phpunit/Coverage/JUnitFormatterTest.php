@@ -49,6 +49,7 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 use function count;
 use function dirname;
 use function file_get_contents;
+use function file_put_contents;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use function preg_match_all;
@@ -60,6 +61,10 @@ use function unlink;
 #[Group('unit')]
 final class JUnitFormatterTest extends TestCase
 {
+    private string $originalFilepath;
+
+    private string $originalContent;
+
     public static function tearDownAfterClass(): void
     {
         parent::tearDownAfterClass();
@@ -67,9 +72,19 @@ final class JUnitFormatterTest extends TestCase
         unlink(dirname(__DIR__) . '/Fixtures/Files/tmp.xml');
     }
 
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        file_put_contents(
+            $this->originalFilepath,
+            $this->originalContent
+        );
+    }
+
     public function test_it_formats_plain_junit(): void
     {
-        $data = $this->prepareFiles('junit-example.xml');
+        $data = $this->prepareFiles('plain-junit.xml');
 
         $isOk = JUnitFormatter::format($data->original, $data->output);
         $content = file_get_contents($data->output) ?: '';
@@ -89,7 +104,7 @@ final class JUnitFormatterTest extends TestCase
 
     public function test_it_formats_testcase_junit(): void
     {
-        $data = $this->prepareFiles('junit-testcase.xml');
+        $data = $this->prepareFiles('testcase-junit.xml');
 
         $isOk = JUnitFormatter::format($data->original, $data->output);
         $content = file_get_contents($data->output) ?: '';
@@ -122,9 +137,9 @@ final class JUnitFormatterTest extends TestCase
         $fixtures = dirname(__DIR__) . '/Fixtures/Files';
 
         return (object) [
-            'original' => $original = $fixtures . '/' . $testJunitPath,
+            'original' => $this->originalFilepath = $fixtures . '/' . $testJunitPath,
             'output' => $fixtures . '/tmp.xml',
-            'originalContent' => file_get_contents($original) ?: '',
+            'originalContent' => $this->originalContent = file_get_contents($this->originalFilepath) ?: '',
         ];
     }
 }

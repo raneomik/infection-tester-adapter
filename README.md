@@ -11,7 +11,7 @@
 > _(it wasn't this simple, [here's some copilot's very verbose journals & reports](docs/copilot-report) for french speakers - it's a real mess, sorry, all dev problems seem to be included)_
 > _and share the result._
 >
-> _The remaining ~25% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big shoutout to Maks Rafalko & Infection community for this amazing tool_
+> _The remaining ~20% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big shoutout to Maks Rafalko & Infection community for this amazing tool_
 
 This package provides test framework adapter of [Tester][tester] for [infection][infection].
 
@@ -40,9 +40,10 @@ This adapter works directly with your existing Tester tests, with some limitatio
 - Tester provides jUnit.xml and Clover.xml coverage reports, but Infection expects a more complete phpunit report. This adapter embeds transformation of Testers' reports during the mutation process, so it is NOT recomended to use `--skip-initial-tests` with `--coverage` options (it just results in xpath read/FQCN error, unless you are using a script which does the needed trasformation).
 - [Test cases](https://tester.nette.org/en/testcase) are recommended for better report result. But are slower.
 - other forms of tests are supported, but need namespaces to be identified by Infection and referenced in report as covering code.
+- conflict with files may occur using `--debug` option and result in mutation coverge gen errors. Removing '<configured tmp dir|/tmp>/infection' should fix it.
 
 No additional configuration needed, "Convention over configuration" principle.
-*("have a tests in 'tests/' dir and bootstrap.php file in your tests root" is the main requirement)*
+*("have tests in 'tests/' dir and bootstrap.php file in your tests root" is the main requirement)*
 
 
 Infection configuration file `infection.json5.dist`.

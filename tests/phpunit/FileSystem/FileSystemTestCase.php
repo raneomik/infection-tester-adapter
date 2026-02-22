@@ -55,6 +55,7 @@ use function Safe\getcwd;
 use function Safe\realpath;
 use function sprintf;
 use function substr;
+use function substr_count;
 use Symfony\Component\Filesystem\Filesystem;
 use function sys_get_temp_dir;
 
@@ -65,6 +66,9 @@ abstract class FileSystemTestCase extends TestCase
     protected string $cwd;
 
     protected string $tmp;
+
+    /** @var array<string, string> */
+    private static array $fileContentCache = [];
 
     public static function tearDownAfterClass(): void
     {
@@ -95,7 +99,14 @@ abstract class FileSystemTestCase extends TestCase
 
     public static function assertFileContains(string $expectedString, string $filepath): void
     {
-        self::assertStringContainsString($expectedString, (string) @file_get_contents($filepath));
+        $content = self::$fileContentCache[$filepath] ??= (string) @file_get_contents($filepath);
+        self::assertStringContainsString($expectedString, $content);
+    }
+
+    public static function assertFileContainsCount(int $count, string $expectedString, string $filepath): void
+    {
+        $content = self::$fileContentCache[$filepath] ??= (string) @file_get_contents($filepath);
+        self::assertSame($count, substr_count($content, $expectedString));
     }
 
     final protected static function removeTmpDir(): void

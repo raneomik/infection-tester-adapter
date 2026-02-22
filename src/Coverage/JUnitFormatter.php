@@ -69,7 +69,7 @@ final class JUnitFormatter
      */
     private static array $classInfoCache = [];
 
-    private function __construct(
+    public function __construct(
         private readonly string $junitPath,
         private readonly string $outputPath,
         private readonly AssertionsCounter $assertsCounter,
@@ -90,7 +90,7 @@ final class JUnitFormatter
         $self = new self(
             $junitPath,
             $outputPath ?? $junitPath,
-            new AssertionsCounter(),
+            AssertionsCounter::getInstance(),
         );
 
         return $self->doFormat();
@@ -242,7 +242,7 @@ final class JUnitFormatter
         return self::$classInfoCache[$filePath] = [
             'class' => $className,
             'namespace' => $namespace,
-            'assertions' => $this->assertsCounter->countAssertions($content),
+            'assertions' => $this->assertsCounter->countAssertions($filePath, $content),
         ];
     }
 

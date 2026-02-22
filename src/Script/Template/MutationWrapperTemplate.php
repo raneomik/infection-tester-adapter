@@ -40,51 +40,83 @@ use function sprintf;
 use function var_export;
 
 /**
- * Template for Tester --setup script.
- * This script is loaded by Tester Runner to configure coverage collection.
+ * Generates a PHP wrapper for mutant test execution.
+ * killedBy tests correctly.
  */
-final class SetupScriptTemplate
+final class MutationWrapperTemplate
 {
     /**
-     * Generate the setup script with actual values.
-     *
-     * @param string $autoloadPath Path to the vendor autoload file
-     * @param string $prependFile Path to the coverage prepend script
-     * @param string $srcDir Source directory for PCOV filtering
-     *
-     * @return string PHP script with substituted values
+     * @param string[] $commandParts
      */
-    public static function build(
+    public static function generate(
+        array $commandParts,
         string $autoloadPath,
-        string $prependFile,
-        string $srcDir,
     ): string {
         return sprintf(<<<'PHP'
 <?php
 /**
- * Tester setup script for Infection coverage collection
+ * Mutant test run wrapper for Infection + Tester
  * Generated automatically - do not edit
  */
 
 declare(strict_types=1);
 
-// Load autoload first
 require_once %s;
 
-// Configure the Tester Runner
-// Note: $runner is available via use() in the closure from CliTester
-if (isset($runner) && $runner instanceof \Tester\Runner\Runner) {
-    \Raneomik\InfectionTestFramework\Tester\Script\TesterJobSetup::configure(
-        $runner,
-        %s,
-        %s,
-    );
+use Raneomik\InfectionTestFramework\Tester\Coverage\AssertionsCounter;
+use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
+use Symfony\Component\Process\Process;
+
+$testOutput = '';
+$assertCounter = AssertionsCounter::getInstance();
+$testIdentifier = new CoveringTestIdentifier();
+
+$process = new Process(%s);
+$process->setTimeout(null);
+$process->run(static function (string $type, string $buffer) use (&$testOutput): void {
+    $testOutput .= $buffer;
+});
+
+$exitCode = $process->getExitCode() ?? 1;
+
+if (0 !== $exitCode && 1 === preg_match(
+    '/^not ok\s+(?P<filepath>\S+\.php)(?:\s+method=(?P<method>\w+))?/m',
+    $testOutput, 
+    $match,
+)) {    
+    $testFile   = $match['filepath'];
+    $methodName = $match['method'] ?? 'test';
+
+    $class = '';
+    $content = @file_get_contents($testFile) ?: '';
+
+    $ns = '';
+    if (preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $nm)) {
+        $ns = $nm[1];
+    }
+    
+    if (preg_match('/\bclass\s+([a-zA-Z_][a-zA-Z0-9_]*)/i', $content, $cm)) {
+        $class = ('' !== $ns ? $ns . '\\' : '') . $cm[1];
+    }
+        
+    $assertCounts = $assertCounter->countAssertions($testFile, $content);
+    $assertCountInTest = $assertCounts[$methodName] ?? $assertCounts['total'] ?? 0;
+    $testOutput = "\n" . "Tests: 1, Assertions: " . $assertCountInTest . "\n\n" . $testOutput;
+    
+    $testOutput = "\n" . $testIdentifier->getTestId(
+        $methodName,
+        $class,
+        $ns,
+        $testFile,
+    ) . $testOutput;
 }
+
+fwrite(STDOUT, $testOutput);
+exit($exitCode);
 
 PHP,
             var_export($autoloadPath, true),
-            var_export($prependFile, true),
-            var_export($srcDir, true),
+            var_export($commandParts, true),
         );
     }
 }

@@ -58,7 +58,7 @@ final class CommandLineBuilder
      *
      * @return string[]
      */
-    public function build(string $testFrameworkExecutable, array $phpExtraArgs, array $frameworkArgs): array
+    public function build(string $testFrameworkExecutable, array $phpExtraArgs = [], array $frameworkArgs = []): array
     {
         $phpExtraArgs = $this->cleanup($phpExtraArgs);
         $frameworkArgs = $this->cleanup($frameworkArgs);

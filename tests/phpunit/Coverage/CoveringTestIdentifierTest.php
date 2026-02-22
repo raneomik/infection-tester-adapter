@@ -47,6 +47,7 @@ declare(strict_types=1);
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
 use function dirname;
+use Iterator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -62,7 +63,7 @@ final class CoveringTestIdentifierTest extends TestCase
      *     expectedId: string
      * }>
      */
-    public static function idCases(): iterable
+    public static function fileIdCases(): iterable
     {
         $fixtures = dirname(__DIR__) . '/Fixtures/Files/tester';
 
@@ -97,7 +98,7 @@ final class CoveringTestIdentifierTest extends TestCase
         ];
     }
 
-    #[DataProvider('idCases')]
+    #[DataProvider('fileIdCases')]
     public function test_it_identifies_test(
         string $arg,
         string $file,
@@ -108,6 +109,72 @@ final class CoveringTestIdentifierTest extends TestCase
         $identifier = new CoveringTestIdentifier([$file]);
 
         $testId = $identifier->identifyTest();
+
+        self::assertSame($expectedId, $testId);
+    }
+
+    /**
+     * @return Iterator<array<string, string>>
+     */
+    public static function idCases(): iterable
+    {
+        yield 'with method' => [
+            'method' => 'testSomething',
+            'class' => 'class',
+            'namespace' => 'namespace',
+            'filename' => 'file.php',
+            'expectedId' => 'namespace\class::testSomething',
+        ];
+
+        yield 'without method' => [
+            'method' => '',
+            'class' => 'class',
+            'namespace' => 'namespace',
+            'filename' => 'file.php',
+            'expectedId' => 'namespace\class::test',
+        ];
+
+        yield 'without class' => [
+            'method' => '',
+            'class' => '',
+            'namespace' => 'namespace',
+            'filename' => 'file.php',
+            'expectedId' => 'namespace\file::test',
+        ];
+
+        yield 'namespaced phpt file' => [
+            'method' => '',
+            'class' => '',
+            'namespace' => 'namespace',
+            'filename' => 'file.phpt',
+            'expectedId' => 'namespace\file::test',
+        ];
+
+        yield 'without namespace phpt file' => [
+            'method' => '',
+            'class' => '',
+            'namespace' => '',
+            'filename' => 'file.phpt',
+            'expectedId' => 'file::test',
+        ];
+    }
+
+    #[DataProvider('idCases')]
+    public function test_it_gets_id(
+        string $method,
+        string $class,
+        string $namespace,
+        string $filename,
+        string $expectedId,
+    ): void {
+        $identifier = new CoveringTestIdentifier();
+
+        $testId = $identifier->getTestId(
+            $method,
+            $class,
+            $namespace,
+            $filename,
+        );
 
         self::assertSame($expectedId, $testId);
     }

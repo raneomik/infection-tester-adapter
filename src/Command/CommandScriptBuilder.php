@@ -36,10 +36,10 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Command;
 
-use function array_map;
 use Raneomik\InfectionTestFramework\Tester\Coverage\PrependScriptGenerator;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\InitialTestRunTemplate;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\SetupScriptTemplate;
+use function realpath;
 use function rtrim;
 use function sprintf;
 use Symfony\Component\Filesystem\Filesystem;
@@ -113,7 +113,6 @@ final class CommandScriptBuilder
         array $phpExtraArgs = [],
         array $frameworkArgs = [],
     ): string {
-        // Build command using CommandLineBuilder
         $commandParts = $this->commandLineBuilder->build(
             $testFrameworkExecutable,
             $phpExtraArgs,
@@ -174,13 +173,19 @@ final class CommandScriptBuilder
      */
     private function prepareSrcDirs(array $srcDirs): array
     {
-        return array_map(
-            fn (string $d): string => sprintf(
-                '%s/%s',
-                rtrim($this->projectDir, '/'),
-                trim($d, '/')
-            ),
-            $srcDirs
-        );
+        $result = [];
+
+        foreach ($srcDirs as $d) {
+            $candidate = sprintf('%s/%s', rtrim($this->projectDir, '/'), trim($d, '/'));
+            $resolved = realpath($candidate);
+
+            if (false === $resolved) {
+                continue;
+            }
+
+            $result[] = $resolved;
+        }
+
+        return $result;
     }
 }
