@@ -40,6 +40,7 @@ use function array_map;
 use function array_unique;
 use function dirname;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
+use function is_file;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\MutationBootstrapTemplate;
@@ -196,6 +197,12 @@ final readonly class MutationConfigBuilder
 
     private function findAutoloadPath(): string
     {
-        return dirname(__DIR__, 2) . '/vendor/autoload.php';
+        $autoloadPath = $this->projectDir . '/vendor/autoload.php';
+
+        if (!is_file($autoloadPath)) {
+            return dirname(__DIR__, 2) . '/vendor/autoload.php';
+        }
+
+        return $autoloadPath;
     }
 }
