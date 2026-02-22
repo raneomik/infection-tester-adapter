@@ -90,13 +90,13 @@ if (0 !== $exitCode && 1 === preg_match(
     $class = '';
     $content = @file_get_contents($testFile) ?: '';
 
-    $ns = '';
+    $namespace = '';
     if (preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $nm)) {
-        $ns = $nm[1];
+        $namespace = $nm[1];
     }
     
     if (preg_match('/\bclass\s+([a-zA-Z_][a-zA-Z0-9_]*)/i', $content, $cm)) {
-        $class = ('' !== $ns ? $ns . '\\' : '') . $cm[1];
+        $class = $cm[1];
     }
         
     $assertCounts = $assertCounter->countAssertions($testFile, $content);
@@ -106,7 +106,7 @@ if (0 !== $exitCode && 1 === preg_match(
     $testOutput = "\n" . $testIdentifier->getTestId(
         $methodName,
         $class,
-        $ns,
+        $namespace,
         $testFile,
     ) . $testOutput;
 }
