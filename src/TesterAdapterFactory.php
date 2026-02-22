@@ -70,7 +70,7 @@ final readonly class TesterAdapterFactory implements TestFrameworkAdapterFactory
                 $tmpDir,
                 $projectDir,
                 Path::makeRelative($jUnitFilePath, $tmpDir),
-                $filesystem = new Filesystem(),
+                new Filesystem(),
                 new CommandLineBuilder(),
                 new PrependScriptGenerator(),
             )
@@ -80,11 +80,11 @@ final readonly class TesterAdapterFactory implements TestFrameworkAdapterFactory
             self::NAME,
             $testFrameworkExecutable,
             $sourceDirectories,
-            $filesystem,
             new VersionParser(self::NAME),
             new CommandLineBuilder(),
             $initialTestRunCommandBuilder,
             new MutationConfigBuilder($tmpDir, $projectDir),
+            new TapTestChecker(),
         );
     }
 

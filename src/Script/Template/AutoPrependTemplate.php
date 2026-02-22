@@ -49,14 +49,14 @@ final class AutoPrependTemplate
     /**
      * Generate the prepend script content.
      *
-     * @param string|null $autoload Path to autoload file
+     * @param string $autoload Path to autoload file
      * @param string $fragmentDir Directory for coverage fragments
      * @param string[] $srcDirs Source directories to cover
      *
      * @return string Complete PHP script content
      */
     public static function build(
-        ?string $autoload,
+        string $autoload,
         string $fragmentDir,
         array $srcDirs,
     ): string {

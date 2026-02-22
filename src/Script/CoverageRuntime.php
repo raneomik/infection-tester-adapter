@@ -57,6 +57,7 @@ use function register_shutdown_function;
 use function rtrim;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Filter;
+use SebastianBergmann\CodeCoverage\Test\TestStatus\TestStatus;
 use function serialize;
 use SplFileInfo;
 use function sprintf;
@@ -85,6 +86,10 @@ final class CoverageRuntime
      */
     private static array $filterCache = [];
 
+    private readonly CoveringTestIdentifier $coveringTestIdentifier;
+
+    private readonly CoverageDriverProvider $coverageDriverProvider;
+
     /**
      * @param string[] $srcDirs
      */
@@ -92,6 +97,8 @@ final class CoverageRuntime
         private readonly string $fragmentDir,
         private readonly array $srcDirs,
     ) {
+        $this->coveringTestIdentifier = new CoveringTestIdentifier(get_included_files());
+        $this->coverageDriverProvider = new CoverageDriverProvider();
     }
 
     /**
@@ -120,19 +127,21 @@ final class CoverageRuntime
             return;
         }
 
-        $coverageDriverProvider = new CoverageDriverProvider();
-        $driver = $coverageDriverProvider->coverageDriver($filter);
+        $driver = $this->coverageDriverProvider->coverageDriver($filter);
 
         if (null === $driver) {
             return;
         }
 
-        $coveringTestIdentifier = new CoveringTestIdentifier(get_included_files());
         $codeCoverage = new CodeCoverage($driver, $filter);
-        $codeCoverage->start($coveringTestIdentifier->identifyTest());
+
+        $codeCoverage->start(
+            $this->coveringTestIdentifier->identifyTest(),
+            $this->coveringTestIdentifier->identifySize(),
+        );
 
         register_shutdown_function(function () use ($codeCoverage): void {
-            $this->dumpCoverage($codeCoverage, $this->fragmentDir);
+            $this->dumpCoverage($codeCoverage);
         });
     }
 
@@ -244,16 +253,16 @@ final class CoverageRuntime
     /**
      * Dump coverage data to a fragment file.
      */
-    private function dumpCoverage(CodeCoverage $codeCoverage, string $fragmentDir): void
+    private function dumpCoverage(CodeCoverage $codeCoverage): void
     {
         try {
-            $codeCoverage->stop();
+            $codeCoverage->stop(true, TestStatus::success());
         } catch (Throwable) {
             // Ignore errors during stop
         }
 
         $filename = $this->generateFragmentFilename();
-        $path = rtrim($fragmentDir, '/') . '/' . $filename;
+        $path = rtrim($this->fragmentDir, '/') . '/' . $filename;
 
         @file_put_contents($path, serialize($codeCoverage));
     }

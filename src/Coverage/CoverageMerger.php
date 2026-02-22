@@ -38,16 +38,14 @@ namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
 use function class_exists;
 use function file_get_contents;
-use function fwrite;
 use function is_file;
 use function is_string;
-use const PHP_EOL;
 use function Pipeline\take;
+use RuntimeException;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Report\Xml\Facade as PhpUnitXmlFacade;
 use SplFileInfo;
 use function sprintf;
-use const STDERR;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use function unserialize;
@@ -80,9 +78,7 @@ final readonly class CoverageMerger
         $merged = $this->mergeFragments($fragmentDir);
 
         if (!$merged instanceof CodeCoverage) {
-            fwrite(STDERR, "No valid coverage fragments found\n");
-
-            return 4;
+            throw new RuntimeException(sprintf('No coverage fragments found in "%s".', $fragmentDir));
         }
 
         // Step 2: Write coverage XML
@@ -104,8 +100,6 @@ final readonly class CoverageMerger
         $files = $this->findFragmentFiles($fragmentDir);
 
         if ([] === $files) {
-            fwrite(STDERR, sprintf('No coverage fragments found in %s%s', $fragmentDir, PHP_EOL));
-
             return null;
         }
 

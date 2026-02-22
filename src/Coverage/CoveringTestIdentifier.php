@@ -41,18 +41,47 @@ use function file_exists;
 use function file_get_contents;
 use function in_array;
 use function preg_match;
+use SebastianBergmann\CodeCoverage\Test\TestSize\TestSize;
 use function sprintf;
 use function str_contains;
 use function str_ends_with;
 
-final readonly class CoveringTestIdentifier
+final class CoveringTestIdentifier
 {
+    private string $foundFilePath = '';
+
+    private string $foundMethodName = '';
+
     /**
      * @param string[] $includedFiles
      */
     public function __construct(
-        private array $includedFiles,
+        private readonly array $includedFiles = [],
     ) {
+    }
+
+    /**
+     * Determine test size based on assertion count in the current test method.
+     * Delegates to AssertionsCounter (singleton + cache).
+     * <= 3  → small / <= 10 → medium / > 10  → large
+     */
+    public function identifySize(): TestSize
+    {
+        if ('' === $this->foundFilePath || '' === $this->foundMethodName) {
+            return TestSize::unknown(); // unknown
+        }
+
+        $count = AssertionsCounter::getInstance()->countInMethod($this->foundFilePath, $this->foundMethodName);
+
+        if (3 >= $count) {
+            return TestSize::small(); // small
+        }
+
+        if (10 >= $count) {
+            return TestSize::medium(); // medium
+        }
+
+        return TestSize::large(); // large
     }
 
     /**
@@ -78,48 +107,15 @@ final readonly class CoveringTestIdentifier
         return 'not-to-cover';
     }
 
-    /**
-     * Extract test identifier from a test file path.
-     */
-    private function extractTestId(string $filePath): ?string
-    {
-        if (!file_exists($filePath)) {
-            return null;
-        }
-
-        $content = @file_get_contents($filePath);
-
-        if (false === $content) {
-            return null;
-        }
-
-        $namespace = '';
-
-        if (0 < preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $matches)) {
-            $namespace = $matches[1];
-        }
-
-        $className = '';
-
-        if (0 < preg_match('/^\s*(?:final\s+)?(?:abstract\s+)?class\s+([a-zA-Z0-9_]+)/m', $content, $matches)) {
-            $className = $matches[1];
-        }
-
-        // TestCase format: extract method from --method=xxx in argv
-        $methodName = $this->extractMethodFromArgv();
-
-        $basename = basename($filePath, '.php');
-        $basename = basename($basename, '.phpt');
-
-        return $this->getTestId($methodName, $className, $namespace, $basename);
-    }
-
-    private function getTestId(
+    public function getTestId(
         string $methodName,
         string $className,
         string $namespace,
-        string $basename,
+        string $filePath,
     ): string {
+        $basename = basename($filePath, '.php');
+        $basename = basename($basename, '.phpt');
+
         if (
             !in_array('', [$methodName, $className, $namespace], true)
         ) {
@@ -150,6 +146,52 @@ final readonly class CoveringTestIdentifier
         }
 
         return sprintf('%s::%s', $basename, 'test');
+    }
+
+    /**
+     * Extract test identifier from a test file path.
+     */
+    private function extractTestId(string $filePath): ?string
+    {
+        if (!file_exists($filePath)) {
+            return null;
+        }
+
+        $content = @file_get_contents($filePath);
+
+        if (false === $content) {
+            return null;
+        }
+
+        // cache-warmer for file
+        AssertionsCounter::getInstance()->countAssertions($filePath, $content);
+
+        // save for identifySize()
+        $this->foundFilePath = $filePath;
+
+        $namespace = '';
+
+        if (0 < preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $matches)) {
+            $namespace = $matches[1];
+        }
+
+        $className = '';
+
+        if (0 < preg_match('/\bclass\s+([a-zA-Z_][a-zA-Z0-9_]*)/i', $content, $matches)) {
+            $className = $matches[1];
+        }
+
+        $methodName = $this->extractMethodFromArgv();
+
+        // save for identifySize()
+        $this->foundMethodName = $methodName;
+
+        return $this->getTestId(
+            $methodName,
+            $className,
+            $namespace,
+            $filePath,
+        );
     }
 
     /**

@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Script;
 
 use function fwrite;
+use Infection\TestFramework\PhpUnit\Adapter\PhpUnitAdapter;
 use const PHP_EOL;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
 use const STDERR;
@@ -122,7 +123,7 @@ final readonly class InitialTestRunner
         try {
             $this->coverageMerger->merge(
                 $this->coverageFragmentDir,
-                $this->tmpDir,
+                $this->tmpDir . '/' . PhpUnitAdapter::COVERAGE_DIR,
                 $this->tmpJunitPath
             );
         } catch (Throwable $throwable) {

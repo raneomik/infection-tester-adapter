@@ -6,7 +6,14 @@ namespace App\Tester\Tests;
 
 class TestCaseTest
 {
-    public function testNothing(): void
+    public function testFail(): void
     {
+        Assert::fail('This test should fail');
+    }
+
+    public function testTrueFalse(): void
+    {
+        Assert::true(true);
+        Assert::false(false);
     }
 }

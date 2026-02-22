@@ -114,7 +114,7 @@ final readonly class PrependScriptGenerator
      */
     private function writeScript(
         string $scriptPath,
-        ?string $autoload,
+        string $autoload,
         string $fragmentDir,
         array $srcDirs,
     ): void {

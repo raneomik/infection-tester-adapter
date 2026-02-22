@@ -53,9 +53,9 @@ final class VersionParserTest extends TestCase
     }
 
     #[DataProvider('versionProvider')]
-    public function test_it_parses_version_from_string(string $content, string $expectedVersion): void
+    public function test_it_parses_version_from_string(string $input, string $expectedVersion): void
     {
-        $result = $this->versionParser->parse($content);
+        $result = $this->versionParser->parse($input);
 
         self::assertSame($expectedVersion, $result);
     }

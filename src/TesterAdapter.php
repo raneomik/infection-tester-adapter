@@ -38,14 +38,11 @@ namespace Raneomik\InfectionTestFramework\Tester;
 
 use function array_filter;
 use function explode;
-use Infection\AbstractTestFramework\Coverage\TestLocation;
 use Infection\AbstractTestFramework\TestFrameworkAdapter;
-use function preg_match;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilder;
 use Raneomik\InfectionTestFramework\Tester\Config\MutationConfigBuilder;
 use function sprintf;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
 final class TesterAdapter implements TestFrameworkAdapter
@@ -61,11 +58,11 @@ final class TesterAdapter implements TestFrameworkAdapter
         private readonly string $name,
         private readonly string $testFrameworkExecutable,
         private readonly array $srcDirs,
-        private readonly Filesystem $filesystem,
         private readonly VersionParser $versionParser,
         private readonly CommandLineBuilder $commandLineBuilder,
         private readonly InitialTestRunCommandBuilder $initialTestRunCommandBuilder,
         private readonly MutationConfigBuilder $mutationConfigBuilder,
+        private readonly TapTestChecker $tapTestChecker,
     ) {
     }
 
@@ -76,24 +73,7 @@ final class TesterAdapter implements TestFrameworkAdapter
 
     public function testsPass(string $output): bool
     {
-        if (0 < preg_match('/failures!/i', $output)) {
-            return false;
-        }
-
-        if (0 < preg_match('/errors!/i', $output)) {
-            return false;
-        }
-
-        // OK (XX tests, YY assertions)
-        $isOk = 0 < preg_match('/OK\s\(/', $output);
-
-        // "OK, but incomplete, skipped, or risky tests!"
-        $isOkWithInfo = 0 < preg_match('/OK\s?,/', $output);
-
-        // "Warnings!" - e.g. when deprecated functions are used, but tests pass
-        $isWarning = 0 < preg_match('/warnings!/i', $output);
-
-        return $isOk || $isOkWithInfo || $isWarning;
+        return $this->tapTestChecker->testsPass($output);
     }
 
     public function getName(): string
@@ -118,9 +98,7 @@ final class TesterAdapter implements TestFrameworkAdapter
     }
 
     /**
-     * @param TestLocation[] $coverageTests
-     *
-     * @return string[]
+     * @return array<int, string>
      */
     public function getMutantCommandLine(
         array $coverageTests,
@@ -129,29 +107,16 @@ final class TesterAdapter implements TestFrameworkAdapter
         string $mutationOriginalFilePath,
         string $extraOptions = '',
     ): array {
-        $outputDir = $this->mutationConfigBuilder->createOutputDirectory($mutationHash);
-        $this->filesystem->mkdir($outputDir);
-
-        $bootstrap = $this->mutationConfigBuilder->createMutationBootstrap(
+        $wrapperPath = $this->mutationConfigBuilder->prepareMutant(
+            $this->testFrameworkExecutable,
+            $this->srcDirs,
+            $coverageTests,
+            $mutatedFilePath,
             $mutationHash,
             $mutationOriginalFilePath,
-            $mutatedFilePath,
         );
 
-        $this->filesystem->dumpFile($bootstrap['path'], $bootstrap['content']);
-
-        $testerArgs = $this->mutationConfigBuilder->buildMutantArguments(
-            $outputDir,
-            $coverageTests,
-        );
-
-        $extraArgs = $this->mutationConfigBuilder->buildExtraArgs($this->srcDirs, $bootstrap['path']);
-
-        return $this->commandLineBuilder->build(
-            $this->testFrameworkExecutable,
-            $extraArgs,
-            $testerArgs
-        );
+        return ['php', $wrapperPath];
     }
 
     public function getVersion(): string

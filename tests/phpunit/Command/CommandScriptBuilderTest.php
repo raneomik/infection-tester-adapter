@@ -55,11 +55,11 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
 
         $this->commandScriptBuilder = new CommandScriptBuilder(
             [
-                dirname(__DIR__) . '/Fixtures/Files/tester/',
-                dirname(__DIR__) . '/Fixtures/Files/tester',
+                'tester/',
+                'not-existent',
             ],
             $this->tmp,
-            dirname(__DIR__) . '/Fixtures/Files/tester',
+            dirname(__DIR__) . '/Fixtures/Files',
             'junit.xml',
             new Filesystem(),
             new CommandLineBuilder(),
@@ -83,6 +83,7 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
 
         self::assertSame($this->tmp . '/tester-setup.php', $setupScript = $this->commandScriptBuilder->buildSetupScript());
         self::assertFileExists($setupScript);
+        self::assertFileContains('/Fixtures/Files/tester', $setupScript);
         self::asserChmod('0755', $setupScript);
 
         self::assertDirectoryExists($this->tmp . '/coverage-fragments');
@@ -91,5 +92,6 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
         self::assertFileExists($prependFile = $this->tmp . '/coverage_prepend.php');
         self::asserChmod('0644', $prependFile);
         self::assertFileContains('/vendor/autoload.php', $prependFile);
+        self::assertFileContains('/Fixtures/Files/tester', $prependFile);
     }
 }
