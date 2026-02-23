@@ -64,7 +64,7 @@ final readonly class InitialTestRunCommandBuilder
         array $phpExtraArgs = [],
     ): array {
         // Generate setup script for Tester Runner (uses JobSetup::configure)
-        $setupScript = $this->commandScriptBuilder->buildSetupScript();
+        $setupScript = $this->commandScriptBuilder->buildInitSetupScript();
 
         // Build Tester framework arguments with --setup
         $frameworkArgs = array_merge(

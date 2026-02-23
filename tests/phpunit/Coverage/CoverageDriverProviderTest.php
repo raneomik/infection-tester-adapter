@@ -46,6 +46,7 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
+use function dirname;
 use function getenv;
 use function ini_get;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -53,6 +54,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
+use function realpath;
 use ReflectionProperty;
 use SebastianBergmann\CodeCoverage\Driver\Driver;
 use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
@@ -96,11 +98,10 @@ final class CoverageDriverProviderTest extends TestCase
             'driver' => 'pcov',
             'iniOptions' => [
                 '-d', 'pcov.enabled=1',
-                '-d', 'pcov.directory=test',
             ],
             'runnerOptions' => [
                 'pcov.enabled' => '1',
-                'pcov.directory' => 'test',
+                'pcov.directory' => realpath(dirname(__DIR__) . '/Fixtures/Files') ?: '',
             ],
         ];
 
@@ -128,8 +129,8 @@ final class CoverageDriverProviderTest extends TestCase
         array $runnerOptions,
     ): void {
         $coverageDriverProvider = $this->createProvider($driver);
-        self::assertSame($iniOptions, $coverageDriverProvider->phpIniOptions('test'));
-        self::assertSame($runnerOptions, $coverageDriverProvider->runnerOptions('test'));
+        self::assertSame($iniOptions, $coverageDriverProvider->phpIniOptions());
+        self::assertSame($runnerOptions, $coverageDriverProvider->runnerOptions([realpath(dirname(__DIR__) . '/Fixtures/Files') ?: '']));
     }
 
     private function createProvider(?string $driver = null): CoverageDriverProvider

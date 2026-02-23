@@ -1,0 +1,23 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "timeout": 25,
+    "source": {
+        "directories": [
+            "src"
+        ],
+        "excludes": [
+            "src/Uncovered",
+            "src/SourceClass.php",
+        ]
+    },
+    "logs": {
+        "summary": "var/infection-exclude.log",
+        "text": "var/report-exclude.log",
+        "html": "var/report-exclude.html"
+    },
+    "tmpDir": "var/infection-exclude",
+    "testFramework": "tester",
+    "mutators": {
+        "@default": true
+    }
+}

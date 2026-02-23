@@ -3,15 +3,16 @@
     "timeout": 25,
     "source": {
         "directories": [
-            "src"
-        ]
+            "src/Covered",
+            "src/Inner"
+        ],
     },
     "logs": {
-        "summary": "var/infection.log",
-        "text": "var/report.log",
-        "html": "var/report.html"
+        "summary": "var/infection-multiSrc.log",
+        "text": "var/report-multiSrc.log",
+        "html": "var/report-multiSrc.html"
     },
-    "tmpDir": "var/infection",
+    "tmpDir": "var/infection-multiSrc",
     "testFramework": "tester",
     "mutators": {
         "@default": true

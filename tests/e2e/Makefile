@@ -32,14 +32,17 @@ tester_coverage: vendor/autoload.php var/infection/infection
 		--coverage var/infection/infection/index.xml --coverage-src src \
 		-o junit:var/infection/infection/junit.xml \
 
+args := ''
+config := 'common'
 .PHONY: infection
 infection: vendor/autoload.php
 	$(INFECTION) \
 		--threads=max \
 		--show-mutations=0 \
 		--with-uncovered \
-		--test-framework-options=$(suite)
-	@diff --ignore-all-space expected-output.txt var/infection.log
+		--test-framework-options=$(suite) \
+      	--configuration=infection.$(config).json5 $(args)
+	@diff --ignore-all-space expected-output-$(config).txt var/infection-$(config).log
 
 # Do install if there's no 'vendor'
 vendor/autoload.php:

@@ -41,7 +41,6 @@ use Tester\Runner\Runner;
 
 /**
  * Configures Tester Runner for coverage collection.
- * Uses intelligent driver detection (PCOV > PHPDBG > Xdebug).
  */
 final class TesterJobSetup
 {
@@ -50,13 +49,13 @@ final class TesterJobSetup
      *
      * @param Runner $runner The Tester Runner instance
      * @param string $prependFile Path to the coverage prepend script
-     * @param string|null $pcovDir Optional PCOV directory for filtering
+     * @param string[] $srcDirs PCOV directories for coverage
      */
-    public static function configure(Runner $runner, string $prependFile, ?string $pcovDir = null): void
+    public static function configure(Runner $runner, string $prependFile, array $srcDirs): void
     {
         $coverageDriverProvider = new CoverageDriverProvider();
 
-        foreach ($coverageDriverProvider->runnerOptions($pcovDir) as $option => $value) {
+        foreach ($coverageDriverProvider->runnerOptions($srcDirs) as $option => $value) {
             $runner->addPhpIniOption($option, $value);
         }
 

@@ -11,24 +11,24 @@ fi
 
 touch error.log
 
-for dir in  */
-do
-    cd "$dir"
+declare -A testCases
+testCases["Plain"]="common"
+testCases["Function"]="common"
+testCases["TestCase"]="common exclude multiSrc"
 
-    if [ -f composer.json ] || [ -f composer.lock ]
-    then
-        composer install > /dev/null 2>&1
-    fi
+for testCase in "${!testCases[@]}"; do
+  for configCase in ${testCases[$testCase]}; do
+    echo "Testing suite $testCase - $configCase"
 
-    bash run_tests.bash
+    bash run_tests.bash $testCase $configCase
 
     if [ $? != 0 ]; then
         failure="true"
-        echo "$dir" >> ../error.log
-        echo "$output" >> ../error.log
-        echo "" >> ../error.log
+        echo "=== Suite $testCase - $configCase ===" >> error.log
+        echo "$?" >> error.log
+        echo "" >> error.log
     fi
-    cd ..
+  done
 done
 
 if [ $failure = "true" ]

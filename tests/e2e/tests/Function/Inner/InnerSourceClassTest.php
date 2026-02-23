@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\FunctionTest\Inner;
+namespace App\Tests\Function\Inner;
 
 require __DIR__ . '/../bootstrap.php';
 

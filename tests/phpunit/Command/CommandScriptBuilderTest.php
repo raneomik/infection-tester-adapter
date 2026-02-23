@@ -81,7 +81,7 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
     {
         self::assertSame($this->tmp . '/junit.xml', $this->commandScriptBuilder->getJUnitTmpPath());
 
-        self::assertSame($this->tmp . '/tester-setup.php', $setupScript = $this->commandScriptBuilder->buildSetupScript());
+        self::assertSame($this->tmp . '/tester-setup.php', $setupScript = $this->commandScriptBuilder->buildInitSetupScript());
         self::assertFileExists($setupScript);
         self::assertFileContains('/Fixtures/Files/tester', $setupScript);
         self::asserChmod('0755', $setupScript);

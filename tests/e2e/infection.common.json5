@@ -1,0 +1,19 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "timeout": 25,
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+    "logs": {
+        "summary": "var/infection-common.log",
+        "text": "var/report-common.log",
+        "html": "var/report-common.html"
+    },
+    "tmpDir": "var/infection",
+    "testFramework": "tester",
+    "mutators": {
+        "@default": true
+    }
+}

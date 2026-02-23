@@ -7,6 +7,10 @@
     {
       "name": "Maks Rafalko",
       "email": "maks.rafalko@gmail.com"
+    },
+    {
+      "name": "raneomik",
+      "email": "marek.ncsn@gmail.com"
     }
   ],
   "autoload": {
@@ -39,7 +43,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": "^8.2",
+    "php": "^8.3",
     "ext-dom": "*",
     "infection/abstract-testframework-adapter": "^0.5.0",
     "infection/include-interceptor": "^0.2.0",

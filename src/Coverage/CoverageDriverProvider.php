@@ -37,11 +37,11 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
 use function extension_loaded;
-use function is_string;
 use SebastianBergmann\CodeCoverage\Driver\Driver;
 use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
 use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
 use SebastianBergmann\CodeCoverage\Filter;
+use Tester\Helpers;
 
 /**
  * Detects which PHP coverage driver is available.
@@ -75,22 +75,24 @@ final readonly class CoverageDriverProvider
     /**
      * @return string[]
      */
-    public function phpIniOptions(?string $pcovDir = null): array
+    public function phpIniOptions(): array
     {
         return match ($this->driver) {
-            'pcov' => $this->pcovIniOptions($pcovDir),
+            'pcov' => $this->pcovIniOptions(),
             'xdebug' => $this->xdebugIniOptions(),
             default => [],
         };
     }
 
     /**
+     * @param string[] $srcDirs
+     *
      * @return string[]
      */
-    public function runnerOptions(?string $pcovDir = null): array
+    public function runnerOptions(array $srcDirs): array
     {
         return match ($this->driver) {
-            'pcov' => $this->pcovRunnerOptions($pcovDir),
+            'pcov' => $this->pcovRunnerOptions($srcDirs),
             'xdebug' => $this->xdebugRunnerOptions(),
             default => [],
         };
@@ -118,28 +120,21 @@ final readonly class CoverageDriverProvider
     /**
      * @return string[]
      */
-    private function pcovIniOptions(?string $pcovDir): array
+    private function pcovIniOptions(): array
     {
-        $options = ['-d', 'pcov.enabled=1'];
-
-        if (is_string($pcovDir) && '' !== $pcovDir) {
-            $options[] = '-d';
-            $options[] = 'pcov.directory=' . $pcovDir;
-        }
-
-        return $options;
+        return ['-d', 'pcov.enabled=1'];
     }
 
     /**
+     * @param string[] $srcDirs
+     *
      * @return array<string, string>
      */
-    private function pcovRunnerOptions(?string $pcovDir): array
+    private function pcovRunnerOptions(array $srcDirs): array
     {
         $options = ['pcov.enabled' => '1'];
 
-        if (is_string($pcovDir) && '' !== $pcovDir) {
-            $options['pcov.directory'] = $pcovDir;
-        }
+        $options['pcov.directory'] = Helpers::findCommonDirectory($srcDirs);
 
         return $options;
     }

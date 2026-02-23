@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\FunctionTest\Covered;
+namespace App\Tests\Function\Covered;
 
 require __DIR__ . '/../bootstrap.php';
 

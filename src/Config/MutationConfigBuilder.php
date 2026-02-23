@@ -159,16 +159,20 @@ final readonly class MutationConfigBuilder
             return [];
         }
 
-        $firstSrc = $srcDirs[0];
-        $pcovDir = sprintf('%s/%s', $this->projectDir, trim($firstSrc, '/'));
+        $args = [];
+
+        foreach ($srcDirs as $srcDir) {
+            $args[] = '--coverage-src';
+            $args[] = sprintf('%s/%s', $this->projectDir, trim($srcDir, '/'));
+        }
 
         $coverageDriverProvider = new CoverageDriverProvider();
-        $args = $coverageDriverProvider->phpIniOptions($pcovDir);
 
-        $args[] = '-d';
-        $args[] = sprintf('auto_prepend_file=%s', $bootstrapPath);
-
-        return $args;
+        return [
+            ...$args,
+            ...$coverageDriverProvider->phpIniOptions(),
+            '-d', sprintf('auto_prepend_file=%s', $bootstrapPath),
+        ];
     }
 
     /**

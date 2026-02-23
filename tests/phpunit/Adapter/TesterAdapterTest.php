@@ -196,7 +196,7 @@ final class TesterAdapterTest extends FileSystemTestCase
         }
 
         self::assertStringContainsString('pcov.enabled=1', $inlineCmd);
-        self::assertStringContainsString('pcov.directory', $inlineCmd);
+        self::assertStringContainsString('--coverage-src', $inlineCmd);
     }
 
     #[RequiresPhpExtension('xdebug')]

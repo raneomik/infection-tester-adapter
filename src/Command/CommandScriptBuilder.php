@@ -87,12 +87,12 @@ final class CommandScriptBuilder
      *
      * @return string Path to the generated setup script
      */
-    public function buildSetupScript(): string
+    public function buildInitSetupScript(): string
     {
         $scriptContent = SetupScriptTemplate::build(
             $this->getCoverageAutoloadPath(),
             $this->getCoverageScript(),
-            $this->absoluteSrcDirs[0] ?? ''
+            $this->absoluteSrcDirs,
         );
         $scriptPath = sprintf('%s/tester-setup.php', $this->tmpDir);
 

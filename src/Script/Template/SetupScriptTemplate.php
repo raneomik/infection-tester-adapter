@@ -50,14 +50,14 @@ final class SetupScriptTemplate
      *
      * @param string $autoloadPath Path to the vendor autoload file
      * @param string $prependFile Path to the coverage prepend script
-     * @param string $srcDir Source directory for PCOV filtering
+     * @param string[] $srcDirs Source directories for PCOV
      *
      * @return string PHP script with substituted values
      */
     public static function build(
         string $autoloadPath,
         string $prependFile,
-        string $srcDir,
+        array $srcDirs,
     ): string {
         return sprintf(<<<'PHP'
 <?php
@@ -84,7 +84,7 @@ if (isset($runner) && $runner instanceof \Tester\Runner\Runner) {
 PHP,
             var_export($autoloadPath, true),
             var_export($prependFile, true),
-            var_export($srcDir, true),
+            var_export($srcDirs, true),
         );
     }
 }

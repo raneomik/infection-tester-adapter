@@ -125,11 +125,11 @@ final readonly class CoverageMerger
      */
     private function findFragmentFiles(string $fragmentDir): array
     {
-        return take(// @phpstan-ignore-line
+        return take(
             $this->finder->files()
                 ->name('*.phpser')
                 ->in($fragmentDir)
-        )
+        )// @phpstan-ignore-next-line
             ->map(static fn (SplFileInfo $file): string => $file->getPathname())
             ->toList()
         ;

@@ -2,7 +2,7 @@
   "repositories": [
     {
       "type": "path",
-      "url": "../../..",
+      "url": "../..",
       "options": {
         "symlink": false
       }
@@ -23,7 +23,7 @@
     }
   },
   "require": {
-    "php": "^8.2",
+    "php": "^8.3",
     "ext-dom": "*",
     "infection/infection": "@dev",
     "raneomik/infection-tester-adapter": "@dev",
@@ -45,7 +45,7 @@
     ],
     "link-sources": [
       "rm -rf vendor/raneomik/infection-tester-adapter/src",
-      "cd vendor/raneomik/infection-tester-adapter && ln -sf ../../../../../../src src"
+      "cd vendor/raneomik/infection-tester-adapter && ln -sf ../../../../../src src"
     ]
   },
   "minimum-stability": "dev",
