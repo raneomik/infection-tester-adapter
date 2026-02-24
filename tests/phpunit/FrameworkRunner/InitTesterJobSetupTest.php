@@ -34,57 +34,42 @@
 
 declare(strict_types=1);
 
-namespace Raneomik\InfectionTestFramework\Tester\Script\Template;
+namespace Raneomik\Tests\InfectionTestFramework\Tester\FrameworkRunner;
 
-use function sprintf;
-use function var_export;
+use function dirname;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Raneomik\InfectionTestFramework\Tester\FrameworkRunner\InitTesterJobSetup;
+use function realpath;
+use Tester\Runner\Runner;
 
-/**
- * Template for Tester --setup script.
- * This script is loaded by Tester Runner to configure coverage collection.
- */
-final class SetupScriptTemplate
+#[Group('unit')]
+final class InitTesterJobSetupTest extends TestCase
 {
-    /**
-     * Generate the setup script with actual values.
-     *
-     * @param string $autoloadPath Path to the vendor autoload file
-     * @param string $prependFile Path to the coverage prepend script
-     * @param string[] $srcDirs Source directories for PCOV
-     *
-     * @return string PHP script with substituted values
-     */
-    public static function build(
-        string $autoloadPath,
-        string $prependFile,
-        array $srcDirs,
-    ): string {
-        return sprintf(<<<'PHP'
-<?php
-/**
- * Tester setup script for Infection coverage collection
- * Generated automatically - do not edit
- */
+    public function test_it_configures_runner(): void
+    {
+        $fixtures = realpath(dirname(__DIR__)) . '/Fixtures/Files/tester/src';
 
-declare(strict_types=1);
+        $runner = $this->createMock(Runner::class);
 
-// Load autoload first
-require_once %s;
+        $runner->expects(self::exactly(4))
+            ->method('addPhpIniOption')
+            ->willReturnCallback(static function (string $name, string $value) use ($fixtures): void {
+                match ($name) {
+                    'xdebug.mode' => self::assertSame('coverage', $value),
+                    'xdebug.start_with_request' => self::assertSame('yes', $value),
+                    'pcov.directory' => self::assertSame($fixtures, $value),
+                    'pcov.enabled' => self::assertSame('1', $value),
+                    'register_argc_argv' => self::assertSame('1', $value),
+                    'auto_prepend_file' => self::assertSame('test', $value),
+                    default => self::fail('Unexpected setup: ' . $name),
+                };
+            });
 
-// Configure the Tester Runner
-// Note: $runner is available via use() in the closure from CliTester
-if (isset($runner) && $runner instanceof \Tester\Runner\Runner) {
-    \Raneomik\InfectionTestFramework\Tester\Script\TesterJobSetup::configure(
-        $runner,
-        %s,
-        %s,
-    );
-}
-
-PHP,
-            var_export($autoloadPath, true),
-            var_export($prependFile, true),
-            var_export($srcDirs, true),
+        InitTesterJobSetup::configure(
+            $runner,
+            'test',
+            [$fixtures],
         );
     }
 }

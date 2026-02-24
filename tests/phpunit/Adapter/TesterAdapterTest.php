@@ -37,20 +37,17 @@ declare(strict_types=1);
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Adapter;
 
 use function dirname;
-use function extension_loaded;
-use function file_get_contents;
+use function implode;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandScriptBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilder;
 use Raneomik\InfectionTestFramework\Tester\Config\MutationConfigBuilder;
 use Raneomik\InfectionTestFramework\Tester\Coverage\PrependScriptGenerator;
-use Raneomik\InfectionTestFramework\Tester\TapTestChecker;
 use Raneomik\InfectionTestFramework\Tester\TesterAdapter;
+use Raneomik\InfectionTestFramework\Tester\TestPassChecker;
 use Raneomik\InfectionTestFramework\Tester\VersionParser;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use function Raneomik\Tests\InfectionTestFramework\Tester\normalizePath as p;
@@ -83,19 +80,27 @@ final class TesterAdapterTest extends FileSystemTestCase
      */
     public static function passProvider(): iterable
     {
-        yield ['1..1', true];
+        yield ['OK, but incomplete, skipped, or risky tests!', true];
 
-        yield ['1..5', true];
+        yield ['OK (5 tests, 3 assertions)', true];
 
-        yield ['5..5', true];
+        yield ['WARNINGS!', true];
 
-        yield ['5..1', true];
+        yield ['warnings!', true];
 
-        yield ['a..b', false];
+        yield ['warnings!', true];
 
-        yield ['not ok', false];
+        yield ['FAILURES!', false];
 
-        yield ['bail out', false];
+        yield ['FaIlUrEs!', false];
+
+        yield ['failures!', false];
+
+        yield ['ERRORS!', false];
+
+        yield ['ErRoRs!', false];
+
+        yield ['errors!', false];
 
         yield ['unhandled string', false];
     }
@@ -151,11 +156,11 @@ final class TesterAdapterTest extends FileSystemTestCase
         self::assertFileExists($initScript);
     }
 
-    public function test_mutant_cmd_line(): string
+    public function test_mutant_cmd_line(): void
     {
         $testerAdapter = $this->createAdapter();
 
-        $testerAdapter->getMutantCommandLine(
+        $cmd = $testerAdapter->getMutantCommandLine(
             [
                 new TestLocation('test', '/path/to/test', null),
                 new TestLocation('anotherTest', '/path/to/another-test', null),
@@ -167,48 +172,20 @@ final class TesterAdapterTest extends FileSystemTestCase
         );
 
         $expectedBootstrapPath = $this->tmp . sprintf('/mutant/bootstrap-%s.php', self::MUTATION_HASH);
-        $expectedWrapperPath = $this->tmp . sprintf('/mutant/wrapper-%s.php', self::MUTATION_HASH);
 
-        foreach ([$expectedBootstrapPath, $expectedWrapperPath] as $createdFilePath) {
-            self::assertFileExists($createdFilePath);
-            self::assertFileContains(dirname(__DIR__, 3) . '/vendor/autoload.php', $createdFilePath);
-        }
+        self::assertFileExists($expectedBootstrapPath);
+        self::assertFileContains(dirname(__DIR__, 3) . '/vendor/autoload.php', $expectedBootstrapPath);
 
         self::assertFileContains(self::ORIGINAL_FILE_PATH, $expectedBootstrapPath);
         self::assertFileContains(self::MUTATED_FILE_PATH, $expectedBootstrapPath);
 
-        self::assertFileContains('-j', $expectedWrapperPath);
-        self::assertFileContains('1', $expectedWrapperPath);
-        self::assertFileContains('-o', $expectedWrapperPath);
-        self::assertFileContains('tap', $expectedWrapperPath);
-        self::assertFileContains('/path/to/test', $expectedWrapperPath);
-        self::assertFileContainsCount(1, '/path/to/another-test', $expectedWrapperPath);
-
-        return @file_get_contents($expectedWrapperPath) ?: '';
-    }
-
-    #[RequiresPhpExtension('pcov')]
-    #[Depends('test_mutant_cmd_line')]
-    public function test_pcov_ini_options(string $inlineCmd): void
-    {
-        if (!extension_loaded('pcov')) {
-            self::markTestSkipped('PCOV extension is not loaded.');
-        }
-
-        self::assertStringContainsString('pcov.enabled=1', $inlineCmd);
-        self::assertStringContainsString('--coverage-src', $inlineCmd);
-    }
-
-    #[RequiresPhpExtension('xdebug')]
-    #[Depends('test_mutant_cmd_line')]
-    public function test_xdebug_ini_options(string $inlineCmd): void
-    {
-        if (extension_loaded('pcov')) {
-            self::markTestSkipped('running first in PCOV, even if xdebug loaded');
-        }
-
-        self::assertStringContainsString('xdebug.start_with_request=yes', $inlineCmd);
-        self::assertStringContainsString('xdebug.mode=coverage', $inlineCmd);
+        $inlineCmd = implode(' ', $cmd);
+        self::assertStringContainsString('vendor/bin/tester', $inlineCmd);
+        self::assertStringContainsString('--setup ', $inlineCmd);
+        self::assertStringContainsString('-d auto_prepend_file', $inlineCmd);
+        self::assertStringContainsString('-j 1', $inlineCmd);
+        self::assertStringContainsString('/path/to/test', $inlineCmd);
+        self::assertStringContainsString('/path/to/another-test', $inlineCmd);
     }
 
     public function test_it_has_junit_report(): void
@@ -241,7 +218,6 @@ final class TesterAdapterTest extends FileSystemTestCase
         $testerAdapter = new TesterAdapter(
             'tester',
             'vendor/bin/tester',
-            ['projectSrc/dir'],
             new VersionParser('Tester'),
             new CommandLineBuilder(),
             $initialTestRunCommandBuilder,
@@ -249,7 +225,7 @@ final class TesterAdapterTest extends FileSystemTestCase
                 $this->tmp,
                 $this->pathToProject,
             ),
-            new TapTestChecker(),
+            new TestPassChecker(),
         );
 
         if (null !== $version) {

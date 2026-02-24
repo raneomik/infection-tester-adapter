@@ -34,30 +34,35 @@
 
 declare(strict_types=1);
 
-namespace Raneomik\InfectionTestFramework\Tester;
+namespace Raneomik\InfectionTestFramework\Tester\FrameworkRunner;
 
-use function preg_match;
+use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
+use Tester\Runner\Runner;
 
 /**
- * Minimal implementation that can tell if the tests passed or not from a TAP output.
- *
- * @see https://testanything.org/
- *
- * @internal
+ * Configures Tester Runner for coverage collection.
  */
-final readonly class TapTestChecker
+final class InitTesterJobSetup
 {
     /**
-     * @param string $output output of a test execution following the TAP format
+     * Configure the Tester Runner with coverage options.
+     *
+     * @param Runner $runner The Tester Runner instance
+     * @param string $prependFile Path to the coverage prepend script
+     * @param string[] $srcDirs PCOV directories for coverage
      */
-    public function testsPass(string $output): bool
+    public static function configure(Runner $runner, string $prependFile, array $srcDirs): void
     {
-        // TAP format (from -o tap): "not ok ..." means failure
-        if (0 < preg_match('/^(not ok|bail out)\b/m', $output)) {
-            return false;
+        $coverageDriverProvider = new CoverageDriverProvider();
+
+        foreach ($coverageDriverProvider->runnerOptions($srcDirs) as $option => $value) {
+            $runner->addPhpIniOption($option, $value);
         }
 
-        // TAP format: "1..N" present with no "not ok" means all passed
-        return 0 < preg_match('/^\d+\.\.\d+$/m', $output);
+        // Common option: register_argc_argv for Tester
+        $runner->addPhpIniOption('register_argc_argv', '1');
+
+        // Load the prepend script for coverage collection
+        $runner->addPhpIniOption('auto_prepend_file', $prependFile);
     }
 }

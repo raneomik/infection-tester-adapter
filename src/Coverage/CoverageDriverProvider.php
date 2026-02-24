@@ -73,18 +73,6 @@ final readonly class CoverageDriverProvider
     }
 
     /**
-     * @return string[]
-     */
-    public function phpIniOptions(): array
-    {
-        return match ($this->driver) {
-            'pcov' => $this->pcovIniOptions(),
-            'xdebug' => $this->xdebugIniOptions(),
-            default => [],
-        };
-    }
-
-    /**
      * @param string[] $srcDirs
      *
      * @return string[]
@@ -118,14 +106,6 @@ final readonly class CoverageDriverProvider
     }
 
     /**
-     * @return string[]
-     */
-    private function pcovIniOptions(): array
-    {
-        return ['-d', 'pcov.enabled=1'];
-    }
-
-    /**
      * @param string[] $srcDirs
      *
      * @return array<string, string>
@@ -137,17 +117,6 @@ final readonly class CoverageDriverProvider
         $options['pcov.directory'] = Helpers::findCommonDirectory($srcDirs);
 
         return $options;
-    }
-
-    /**
-     * @return string[]
-     */
-    private function xdebugIniOptions(): array
-    {
-        return [
-            '-d', 'xdebug.mode=coverage',
-            '-d', 'xdebug.start_with_request=yes',
-        ];
     }
 
     /**

@@ -34,16 +34,6 @@
 
 declare(strict_types=1);
 
-/*
- * This file is part of the box project.
- *
- * (c) Kevin Herrera <kevin@herrera.io>
- *     Théo Fidry <theo.fidry@gmail.com>
- *
- * This source file is subject to the MIT license that is bundled
- * with this source code in the file LICENSE.
- */
-
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
 use function dirname;
@@ -88,7 +78,6 @@ final class CoverageDriverProviderTest extends TestCase
     /**
      * @return iterable<array{
      *     driver: string,
-     *     iniOptions: string[],
      *     runnerOptions: array<string, string>
      * }>
      */
@@ -96,9 +85,6 @@ final class CoverageDriverProviderTest extends TestCase
     {
         yield [
             'driver' => 'pcov',
-            'iniOptions' => [
-                '-d', 'pcov.enabled=1',
-            ],
             'runnerOptions' => [
                 'pcov.enabled' => '1',
                 'pcov.directory' => realpath(dirname(__DIR__) . '/Fixtures/Files') ?: '',
@@ -107,10 +93,6 @@ final class CoverageDriverProviderTest extends TestCase
 
         yield [
             'driver' => 'xdebug',
-            'iniOptions' => [
-                '-d', 'xdebug.mode=coverage',
-                '-d', 'xdebug.start_with_request=yes',
-            ],
             'runnerOptions' => [
                 'xdebug.mode' => 'coverage',
                 'xdebug.start_with_request' => 'yes',
@@ -119,18 +101,18 @@ final class CoverageDriverProviderTest extends TestCase
     }
 
     /**
-     * @param string[] $iniOptions
      * @param array<string, string> $runnerOptions
      */
     #[DataProvider('driverOptionCases')]
     public function test_it_provides_driver_options(
         string $driver,
-        array $iniOptions,
         array $runnerOptions,
     ): void {
         $coverageDriverProvider = $this->createProvider($driver);
-        self::assertSame($iniOptions, $coverageDriverProvider->phpIniOptions());
-        self::assertSame($runnerOptions, $coverageDriverProvider->runnerOptions([realpath(dirname(__DIR__) . '/Fixtures/Files') ?: '']));
+        self::assertSame(
+            $runnerOptions,
+            $coverageDriverProvider->runnerOptions([realpath(dirname(__DIR__) . '/Fixtures/Files') ?: '']),
+        );
     }
 
     private function createProvider(?string $driver = null): CoverageDriverProvider

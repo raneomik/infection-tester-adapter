@@ -12,7 +12,6 @@ help:
 # Rector
 RECTOR=vendor/bin/rector
 
-
 # PHP CS Fixer
 PHP_CS_FIXER=./.tools/php-cs-fixer
 PHP_CS_FIXER_URL="https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/$(shell cat ./.tools/phpcs-version)/php-cs-fixer.phar"
@@ -29,8 +28,8 @@ PHPSTAN_ARGS=analyse src tests/phpunit -c .phpstan.neon
 # Infection
 INFECTION=./.tools/infection.phar
 INFECTION_URL="https://github.com/infection/infection/releases/download/$(shell cat ./.tools/infection-version)/infection.phar"
-MIN_MSI=68 #80
-MIN_COVERED_MSI=68 #82
+MIN_MSI=71 #80
+MIN_COVERED_MSI=71 #82
 INFECTION_ARGS=--min-msi=$(MIN_MSI) --min-covered-msi=$(MIN_COVERED_MSI) --threads=max --no-interaction --show-mutations=0
 
 .PHONY: all

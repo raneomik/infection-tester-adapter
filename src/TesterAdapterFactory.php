@@ -79,12 +79,11 @@ final readonly class TesterAdapterFactory implements TestFrameworkAdapterFactory
         return new TesterAdapter(
             self::NAME,
             $testFrameworkExecutable,
-            $sourceDirectories,
             new VersionParser(self::NAME),
             new CommandLineBuilder(),
             $initialTestRunCommandBuilder,
             new MutationConfigBuilder($tmpDir, $projectDir),
-            new TapTestChecker(),
+            new TestPassChecker(),
         );
     }
 

@@ -48,7 +48,13 @@ run () {
   local suite=${1}
   local config=${2}
 
-  make infection suite=${suite} config=${config}
+  vendor/bin/infection \
+      --threads=max \
+      --show-mutations=0 \
+      --with-uncovered \
+      --test-framework-options=${suite} \
+      --configuration=infection.${config}.json5
+  diff --ignore-all-space expected-output-${config}.txt var/infection-${config}.log
 }
 
 if [ ! -d "vendor" ]; then

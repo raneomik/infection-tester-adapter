@@ -38,7 +38,7 @@ namespace Raneomik\InfectionTestFramework\Tester\Command;
 
 use Raneomik\InfectionTestFramework\Tester\Coverage\PrependScriptGenerator;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\InitialTestRunTemplate;
-use Raneomik\InfectionTestFramework\Tester\Script\Template\SetupScriptTemplate;
+use Raneomik\InfectionTestFramework\Tester\Script\Template\InitSetupScriptTemplate;
 use function realpath;
 use function rtrim;
 use function sprintf;
@@ -89,7 +89,7 @@ final class CommandScriptBuilder
      */
     public function buildInitSetupScript(): string
     {
-        $scriptContent = SetupScriptTemplate::build(
+        $scriptContent = InitSetupScriptTemplate::build(
             $this->getCoverageAutoloadPath(),
             $this->getCoverageScript(),
             $this->absoluteSrcDirs,

@@ -34,35 +34,57 @@
 
 declare(strict_types=1);
 
-namespace Raneomik\InfectionTestFramework\Tester\Script;
+namespace Raneomik\InfectionTestFramework\Tester\Script\Template;
 
-use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
-use Tester\Runner\Runner;
+use function sprintf;
+use function var_export;
 
 /**
- * Configures Tester Runner for coverage collection.
+ * Template for Tester --setup script.
+ * This script is loaded by Tester Runner to configure coverage collection.
  */
-final class TesterJobSetup
+final class InitSetupScriptTemplate
 {
     /**
-     * Configure the Tester Runner with coverage options.
+     * Generate the setup script with actual values.
      *
-     * @param Runner $runner The Tester Runner instance
+     * @param string $autoloadPath Path to the vendor autoload file
      * @param string $prependFile Path to the coverage prepend script
-     * @param string[] $srcDirs PCOV directories for coverage
+     * @param string[] $srcDirs Source directories for PCOV
+     *
+     * @return string PHP script with substituted values
      */
-    public static function configure(Runner $runner, string $prependFile, array $srcDirs): void
-    {
-        $coverageDriverProvider = new CoverageDriverProvider();
+    public static function build(
+        string $autoloadPath,
+        string $prependFile,
+        array $srcDirs,
+    ): string {
+        return sprintf(<<<'PHP'
+<?php
+/**
+ * Tester setup script for Infection coverage collection
+ * Generated automatically - do not edit
+ */
 
-        foreach ($coverageDriverProvider->runnerOptions($srcDirs) as $option => $value) {
-            $runner->addPhpIniOption($option, $value);
-        }
+declare(strict_types=1);
 
-        // Common option: register_argc_argv for Tester
-        $runner->addPhpIniOption('register_argc_argv', '1');
+// Load autoload first
+require_once %s;
 
-        // Load the prepend script for coverage collection
-        $runner->addPhpIniOption('auto_prepend_file', $prependFile);
+// Configure the Tester Runner
+// Note: $runner is available via use() in the closure from CliTester
+if (isset($runner) && $runner instanceof \Tester\Runner\Runner) {
+    \Raneomik\InfectionTestFramework\Tester\FrameworkRunner\InitTesterJobSetup::configure(
+        $runner,
+        %s,
+        %s,
+    );
+}
+
+PHP,
+            var_export($autoloadPath, true),
+            var_export($prependFile, true),
+            var_export($srcDirs, true),
+        );
     }
 }

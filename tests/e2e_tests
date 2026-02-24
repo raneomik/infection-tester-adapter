@@ -18,22 +18,24 @@ testCases["TestCase"]="common exclude multiSrc"
 
 for testCase in "${!testCases[@]}"; do
   for configCase in ${testCases[$testCase]}; do
-    echo "Testing suite $testCase - $configCase"
+    echo ""
+    echo "== Testing suite $testCase - $configCase =="
 
-    bash run_tests.bash $testCase $configCase
+    output=$(bash run_tests.bash $testCase $configCase)
 
     if [ $? != 0 ]; then
         failure="true"
-        echo "=== Suite $testCase - $configCase ===" >> error.log
-        echo "$?" >> error.log
+        echo "" >> error.log
+        echo "== Suite $testCase - $configCase ==" >> error.log
+        echo "$output" >> error.log
         echo "" >> error.log
     fi
+    echo ""
   done
 done
 
-if [ $failure = "true" ]
-then
-    echo "One of the e2e tests failed, check the logs";
+if [ $failure = "true" ]; then
+    echo "One of the e2e tests failed, check the logs"
     cat error.log
     exit 1
 fi

@@ -39,6 +39,7 @@ namespace Raneomik\InfectionTestFramework\Tester;
 use function array_filter;
 use function explode;
 use Infection\AbstractTestFramework\TestFrameworkAdapter;
+use Override;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilder;
 use Raneomik\InfectionTestFramework\Tester\Config\MutationConfigBuilder;
@@ -51,18 +52,14 @@ final class TesterAdapter implements TestFrameworkAdapter
 
     private ?string $cachedVersion = null;
 
-    /**
-     * @param string[] $srcDirs
-     */
     public function __construct(
         private readonly string $name,
         private readonly string $testFrameworkExecutable,
-        private readonly array $srcDirs,
         private readonly VersionParser $versionParser,
         private readonly CommandLineBuilder $commandLineBuilder,
         private readonly InitialTestRunCommandBuilder $initialTestRunCommandBuilder,
         private readonly MutationConfigBuilder $mutationConfigBuilder,
-        private readonly TapTestChecker $tapTestChecker,
+        private readonly TestPassChecker $testChecker,
     ) {
     }
 
@@ -73,7 +70,7 @@ final class TesterAdapter implements TestFrameworkAdapter
 
     public function testsPass(string $output): bool
     {
-        return $this->tapTestChecker->testsPass($output);
+        return $this->testChecker->check($output);
     }
 
     public function getName(): string
@@ -97,9 +94,7 @@ final class TesterAdapter implements TestFrameworkAdapter
         );
     }
 
-    /**
-     * @return array<int, string>
-     */
+    #[Override]
     public function getMutantCommandLine(
         array $coverageTests,
         string $mutatedFilePath,
@@ -107,16 +102,18 @@ final class TesterAdapter implements TestFrameworkAdapter
         string $mutationOriginalFilePath,
         string $extraOptions = '',
     ): array {
-        $wrapperPath = $this->mutationConfigBuilder->prepareMutant(
-            $this->testFrameworkExecutable,
-            $this->srcDirs,
-            $coverageTests,
-            $mutatedFilePath,
+        $bootstrapPath = $this->mutationConfigBuilder->createMutationBootstrap(
             $mutationHash,
             $mutationOriginalFilePath,
+            $mutatedFilePath,
         );
 
-        return ['php', $wrapperPath];
+        $setupPath = $this->mutationConfigBuilder->createMutantSetupScript($mutationHash);
+
+        return $this->commandLineBuilder->build(
+            $this->testFrameworkExecutable,
+            frameworkArgs: $this->mutationConfigBuilder->buildMutantArguments($coverageTests, $bootstrapPath, $setupPath),
+        );
     }
 
     public function getVersion(): string
