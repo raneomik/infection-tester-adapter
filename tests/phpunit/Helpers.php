@@ -46,6 +46,11 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use function sys_get_temp_dir;
 
+function fixtureFilesPath(string $filepath): string
+{
+    return normalizePath(__DIR__ . '/Fixtures/Files' . $filepath);
+}
+
 /**
  * Normalizes path. Replaces backslashes with forward ones
  */

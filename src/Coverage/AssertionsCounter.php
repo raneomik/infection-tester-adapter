@@ -37,19 +37,13 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
 use function file_get_contents;
-use function preg_match;
-use function preg_match_all;
-use const PREG_OFFSET_CAPTURE;
-use function preg_quote;
-use function strlen;
-use function substr;
 
 final class AssertionsCounter
 {
     private static ?self $instance = null;
 
     /**
-     * Cache: filePath → ['total' => int, methodName => int, ...]
+     * Cache : path => ['total' => int, 'methodName' => int, ...]
      *
      * @var array<string, array<string, int>>
      */
@@ -75,92 +69,13 @@ final class AssertionsCounter
      */
     public function countAssertions(string $filePath, ?string $fileContent = null): array
     {
-        if (null !== $fileContent) {
-            return self::$cache[$filePath] ??= $this->countInFileContent($fileContent);
-        }
-
-        return $this->countInFile($filePath);
+        return self::$cache[$filePath] ??= AssertionScanner::scan(
+            $fileContent ?? (@file_get_contents($filePath) ?: ''),
+        );
     }
 
     public function countInMethod(string $filePath, string $methodName): int
     {
-        return $this->countInFile($filePath)[$methodName] ?? 0;
-    }
-
-    /**
-     * @return array<string, int>
-     */
-    private function countInFile(string $filePath): array
-    {
-        if (isset(self::$cache[$filePath])) {
-            return self::$cache[$filePath];
-        }
-
-        $content = @file_get_contents($filePath);
-
-        if (false === $content) {
-            return self::$cache[$filePath] = ['total' => 0];
-        }
-
-        return self::$cache[$filePath] = $this->countInFileContent($content);
-    }
-
-    /**
-     * @return array<string, int>
-     */
-    private function countInFileContent(string $content): array
-    {
-        $assertions = [];
-
-        foreach ($this->extractMethods($content) as $method) {
-            $assertions[$method] = $this->countAssertionsInMethod($content, $method);
-        }
-
-        return $assertions + ['total' => $this->countAssertionsInContent($content)];
-    }
-
-    /**
-     * @return string[]
-     */
-    private function extractMethods(string $testContent): array
-    {
-        if (false !== preg_match_all('/function\s+(\w+)\s*\(/', $testContent, $matches)) {
-            return $matches[1];
-        }
-
-        return [];
-    }
-
-    private function countAssertionsInMethod(string $testContent, string $methodName): int
-    {
-        if (1 !== preg_match(
-            '/function\s+' . preg_quote($methodName, '/') . '\s*\([^)]*\)\s*(?::\s*\S+\s*)?\{/s',
-            $testContent,
-            $m,
-            PREG_OFFSET_CAPTURE
-        )) {
-            return 0;
-        }
-
-        $i = $start = $m[0][1] + strlen($m[0][0]);
-        $depth = 1;
-        $len = strlen($testContent);
-
-        while ($i++ < $len && 0 < $depth) {
-            match ($testContent[$i]) {
-                '{' => $depth++,
-                '}' => $depth--,
-                default => null,
-            };
-        }
-
-        $methodBody = substr($testContent, $start, $i - $start);
-
-        return $this->countAssertionsInContent($methodBody);
-    }
-
-    private function countAssertionsInContent(string $testContent): int
-    {
-        return (int) preg_match_all('/\bAssert\s*::\s*\w+\s*\(/', $testContent);
+        return $this->countAssertions($filePath)[$methodName] ?? 0;
     }
 }

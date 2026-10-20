@@ -68,13 +68,10 @@ final readonly class CoverageMerger
      * Merge coverage fragments and normalize JUnit XML.
      *
      * @param string $fragmentDir Directory containing coverage fragments
-     * @param string $outDir Directory to write merged coverage XML
+     * @param non-empty-string $outDir Directory to write merged coverage XML
      * @param string|null $junitPath Optional JUnit XML path to normalize
      *
      * @return int Exit code (0 = success)
-     */
-    /**
-     * @param non-empty-string $outDir
      */
     public function merge(string $fragmentDir, string $outDir, ?string $junitPath = null): int
     {
@@ -168,8 +165,7 @@ final readonly class CoverageMerger
 
     /**
      * Write merged coverage data in PHPUnit XML format.
-     */
-    /**
+     *
      * @param non-empty-string $outDir
      */
     private function writeCoverageXml(CodeCoverage $codeCoverage, string $outDir): void

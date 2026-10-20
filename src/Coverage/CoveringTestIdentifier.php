@@ -124,12 +124,14 @@ final class CoveringTestIdentifier
         $basename = basename($filePath, '.php');
         $basename = basename($basename, '.phpt');
 
+        $classNamespace = $namespace . '\\' . $className;
+
         if (
-            !in_array('', [$methodName, $className, $namespace], true)
+            false === in_array('', [$methodName, $className, $namespace], true)
         ) {
             return sprintf(
                 '%s::%s',
-                $namespace . '\\' . $className,
+                $classNamespace,
                 $methodName,
             );
         }
@@ -140,7 +142,7 @@ final class CoveringTestIdentifier
         ) {
             return sprintf(
                 '%s::%s',
-                $namespace . '\\' . $className,
+                $classNamespace,
                 'test',
             );
         }

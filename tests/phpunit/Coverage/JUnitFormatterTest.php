@@ -44,6 +44,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use function preg_match_all;
 use Raneomik\InfectionTestFramework\Tester\Coverage\JUnitFormatter;
+use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 use stdClass;
 use function str_replace;
 use function substr_count;
@@ -54,20 +55,11 @@ use function unlink;
 #[Group('unit')]
 final class JUnitFormatterTest extends TestCase
 {
-    private static string $fixtureDir;
-
-    public static function setUpBeforeClass(): void
-    {
-        parent::setUpBeforeClass();
-
-        self::$fixtureDir ??= dirname(__DIR__) . '/Fixtures/Files';
-    }
-
     public static function tearDownAfterClass(): void
     {
         parent::tearDownAfterClass();
 
-        unlink(dirname(__DIR__) . '/Fixtures/Files/tmp.xml');
+        unlink(fixtureFilesPath('/tmp.xml'));
     }
 
     public function test_it_formats_nothing(): void
@@ -75,13 +67,13 @@ final class JUnitFormatterTest extends TestCase
         $isOk = JUnitFormatter::format('nothing');
         self::assertFalse($isOk);
 
-        $isOk = JUnitFormatter::format(self::$fixtureDir . '/src/.gitkeep');
+        $isOk = JUnitFormatter::format(fixtureFilesPath('/src/.gitkeep'));
         self::assertFalse($isOk);
     }
 
     public function test_it_formats_plain_junit(): void
     {
-        $data = $this->prepareFiles('plain-junit.xml');
+        $data = $this->prepareFiles('/plain-junit.xml');
 
         $isOk = JUnitFormatter::format($data->original, $data->output);
         $content = file_get_contents($data->output) ?: '';
@@ -101,7 +93,7 @@ final class JUnitFormatterTest extends TestCase
 
     public function test_it_formats_testcase_junit(): void
     {
-        $data = $this->prepareFiles('testcase-junit.xml');
+        $data = $this->prepareFiles('/testcase-junit.xml');
 
         $isOk = JUnitFormatter::format($data->original, $data->output);
         $content = file_get_contents($data->output) ?: '';
@@ -238,17 +230,19 @@ final class JUnitFormatterTest extends TestCase
      */
     private function prepareFiles(string $testJunitPath): stdClass
     {
-        $fixtures = dirname(__DIR__) . '/Fixtures/Files';
-        $original = $fixtures . '/' . $testJunitPath;
+        $original = fixtureFilesPath($testJunitPath);
 
         $originalDist = str_replace('.xml', '.dist.xml', $original);
         $originalContent = file_get_contents($originalDist) ?: '';
 
-        file_put_contents($original, $originalContent);
+        file_put_contents(
+            $original,
+            str_replace('%root%', dirname(__DIR__, 3), $originalContent)
+        );
 
         return (object) [
             'original' => $original,
-            'output' => $fixtures . '/tmp.xml',
+            'output' => fixtureFilesPath('/tmp.xml'),
             'originalContent' => $originalContent,
         ];
     }

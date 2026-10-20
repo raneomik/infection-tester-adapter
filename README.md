@@ -7,7 +7,10 @@
 [![Mutation testing badge](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Franeomik%2Finfection-tester-adapter%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/raneomik/infection-tester-adapter/main)
 <details>
 
-<summary>_Disclaimer: AI agent experiment_</summary>
+<summary> 
+Disclaimer: AI agent experiment 
+</summary>
+
 > _chat-gpt5.2 & claude sonnet 4.5 & later 5.5 wrote ~60-75% of this project, by my lack of knowledge on this topic and lack of time to learn..._
 > _I thought it would be interesting to ask AI "Hey, I discovered [this framework][nette], and it comes with its [own testing framework][tester]. But I love Infection and its metrics to push you to test your tests, and could be cool to add an adapter to it... Are we in ? - yes, Here's your code"_
 > _(it wasn't this simple, [here's some copilot's very verbose journals & reports](docs/copilot-report) for french speakers - it's a real mess, sorry, all dev problems seem to be included)_
@@ -23,7 +26,7 @@ This package provides test framework adapter of [Tester][tester] for [infection]
 ## Installation
 
 ```shell
-composer require --dev [infection/infection] raneomik/infection-tester-adapter
+composer require --dev raneomik/infection-tester-adapter
 ```
 
 The adapter should be automatically registered in Infection's runtime through its auto-discovery mechanism.

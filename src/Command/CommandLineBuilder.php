@@ -81,7 +81,7 @@ final class CommandLineBuilder
      */
     private function findPhp(): string
     {
-        $phpExec = (new PhpExecutableFinder())->find();
+        $phpExec = new PhpExecutableFinder()->find();
 
         if (false === $phpExec) {
             throw new RuntimeException('PHP executable not found');
