@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -47,6 +46,8 @@ use Symfony\Component\Process\PhpExecutableFinder;
  * Uses Tester's native options:
  * - `-p <path>` to specify PHP interpreter
  * - `-d <key=value>` to define INI entries
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Command\CommandLineBuilderTest
  */
 final class CommandLineBuilder
 {

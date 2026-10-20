@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -48,6 +47,8 @@ use function trim;
 /**
  * Builder for initial test run command.
  * Encapsulates all logic for preparing coverage collection and test execution.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Command\CommandScriptBuilderTest
  */
 final class CommandScriptBuilder
 {
@@ -80,6 +81,7 @@ final class CommandScriptBuilder
         $this->coverageFragmentDir = sprintf('%s/coverage-fragments', $this->tmpDir);
 
         $this->filesystem->mkdir($this->coverageFragmentDir);
+        $this->filesystem->chmod($this->coverageFragmentDir, 0755);
     }
 
     /**

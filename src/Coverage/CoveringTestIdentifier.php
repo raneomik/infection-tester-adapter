@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -41,11 +40,14 @@ use function file_exists;
 use function file_get_contents;
 use function in_array;
 use function preg_match;
-use SebastianBergmann\CodeCoverage\Test\TestSize\TestSize;
+use SebastianBergmann\CodeCoverage\Test\TestSize;
 use function sprintf;
 use function str_contains;
 use function str_ends_with;
 
+/**
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifierTest
+ */
 final class CoveringTestIdentifier
 {
     private string $foundFilePath = '';
@@ -68,25 +70,27 @@ final class CoveringTestIdentifier
     public function identifySize(): TestSize
     {
         if ('' === $this->foundFilePath || '' === $this->foundMethodName) {
-            return TestSize::unknown(); // unknown
+            return TestSize::Unknown;
         }
 
         $count = AssertionsCounter::getInstance()->countInMethod($this->foundFilePath, $this->foundMethodName);
 
         if (3 >= $count) {
-            return TestSize::small(); // small
+            return TestSize::Small;
         }
 
         if (10 >= $count) {
-            return TestSize::medium(); // medium
+            return TestSize::Medium;
         }
 
-        return TestSize::large(); // large
+        return TestSize::Large;
     }
 
     /**
      * Detect test identifier from included files.
      * This is the most reliable way since the test file is always included.
+     *
+     * @return non-empty-string
      */
     public function identifyTest(): string
     {
@@ -107,6 +111,9 @@ final class CoveringTestIdentifier
         return 'not-to-cover';
     }
 
+    /**
+     * @return non-empty-string
+     */
     public function getTestId(
         string $methodName,
         string $className,
@@ -150,6 +157,8 @@ final class CoveringTestIdentifier
 
     /**
      * Extract test identifier from a test file path.
+     *
+     * @return non-empty-string|null
      */
     private function extractTestId(string $filePath): ?string
     {

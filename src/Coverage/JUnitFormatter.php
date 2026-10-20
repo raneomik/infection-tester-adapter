@@ -58,6 +58,8 @@ use function str_replace;
  *   <testsuite name="Namespace\TestClass" assertions="2" tests="1" time="0.001">
  *     <testcase name="testMethod" class="Namespace\TestClass" classname="Namespace\TestClass" assertions="2" time="0.001"/>
  *   </testsuite>
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Coverage\JUnitFormatterTest
  */
 final class JUnitFormatter
 {
@@ -263,15 +265,13 @@ final class JUnitFormatter
                 ? $parsed['namespace'] . '\\' . $parsed['class']
                 : $parsed['class'];
 
-            if (!isset($grouped[$fullClass])) {
-                $grouped[$fullClass] = [
-                    'namespace' => $parsed['namespace'],
-                    'class' => $parsed['class'],
-                    'file' => $parsed['file'],
-                    'assertions' => $parsed['assertions']['total'],
-                    'tests' => [],
-                ];
-            }
+            $grouped[$fullClass] ??= [
+                'namespace' => $parsed['namespace'],
+                'class' => $parsed['class'],
+                'file' => $parsed['file'],
+                'assertions' => $parsed['assertions']['total'],
+                'tests' => [],
+            ];
 
             $grouped[$fullClass]['tests'][] = [
                 'element' => $testcase['element'],

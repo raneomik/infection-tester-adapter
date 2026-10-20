@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -42,6 +41,8 @@ use function sprintf;
 /**
  * Builder for initial test run command.
  * Encapsulates all logic for preparing coverage collection and test execution.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilderTest
  */
 final readonly class InitialTestRunCommandBuilder
 {

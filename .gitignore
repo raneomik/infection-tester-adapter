@@ -1,7 +1,9 @@
 !/.tools/.gitkeep
 !/tests/e2e/*/var/.gitkeep
+!/tests/tests/phpunit/Fixtures/Files/*.dist.xml
+/tests/phpunit/Fixtures/Files/plain-junit.xml
+/tests/phpunit/Fixtures/Files/testcase-junit.xml
 .phpunit.result.cache
-/.idea
 /.php-cs-fixer.cache
 /.tools/
 /build/

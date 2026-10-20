@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -45,6 +44,8 @@ use Tester\Runner\Test;
 
 /**
  * @internal
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\FrameworkRunner\FailureOutputHandlerTest
  */
 final readonly class FailureOutputHandler implements OutputHandler
 {

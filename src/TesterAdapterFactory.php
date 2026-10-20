@@ -48,7 +48,7 @@ use Symfony\Component\Filesystem\Path;
 
 final readonly class TesterAdapterFactory implements TestFrameworkAdapterFactory
 {
-    private const NAME = 'Tester';
+    private const string NAME = 'Tester';
 
     /**
      * @param array<string> $sourceDirectories

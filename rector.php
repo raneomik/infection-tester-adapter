@@ -56,6 +56,8 @@ return RectorConfig::configure()
         symfonyCodeQuality: true,
     )
 
+    ->withPhpSets(php83: true)
+
     ->withCodeQualityLevel(49)
 
     ->withRules([

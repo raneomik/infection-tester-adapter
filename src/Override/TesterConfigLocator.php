@@ -48,7 +48,7 @@ use function sprintf;
  */
 final readonly class TesterConfigLocator implements TestFrameworkConfigLocatorInterface
 {
-    private const DEFAULT_EXTENSIONS = [
+    private const array DEFAULT_EXTENSIONS = [
         'xml',
         'yml',
         'xml.dist',
@@ -89,6 +89,6 @@ final readonly class TesterConfigLocator implements TestFrameworkConfigLocatorIn
         }
 
         // For other frameworks, throw the original exception
-        throw FileOrDirectoryNotFound::multipleFilesDoNotExist($dir, $triedFiles);
+        throw FileOrDirectoryNotFound::fromFiles($triedFiles, [$dir]);
     }
 }

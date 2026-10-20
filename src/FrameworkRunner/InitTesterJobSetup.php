@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -41,6 +40,8 @@ use Tester\Runner\Runner;
 
 /**
  * Configures Tester Runner for coverage collection.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\FrameworkRunner\InitTesterJobSetupTest
  */
 final class InitTesterJobSetup
 {
