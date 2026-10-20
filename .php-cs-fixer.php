@@ -61,6 +61,7 @@ return (new PhpCsFixer\Config())
         '@Symfony' => true,
         '@Symfony:risky' => true,
         'declare_strict_types' => true,
+        'blank_line_after_opening_tag' => true,
         'blank_line_before_statement' => [
             'statements' => [
                 'break',
@@ -136,6 +137,7 @@ return (new PhpCsFixer\Config())
         'phpdoc_no_empty_return' => true,
         'phpdoc_order' => true,
         'phpdoc_summary' => false,
+        'phpdoc_to_comment' => false,
         'self_static_accessor' => true,
         'single_line_throw' => false,
         'static_lambda' => true,

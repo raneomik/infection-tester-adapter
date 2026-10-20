@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -103,6 +104,7 @@ final readonly class CoverageMerger
         $files = $this->findFragmentFiles($fragmentDir);
 
         $merged = null;
+
         foreach ($files as $file) {
             $cc = $this->loadFragment($file);
 

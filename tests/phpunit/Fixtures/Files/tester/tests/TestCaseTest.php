@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tester\Tests;
 
+use Tester\Assert;
+
 class TestCaseTest
 {
     public function testFail(): void
     {
-        Assert::fail('This test should fail');
+        Assert::fail('This test should fail', true);
     }
 
     public function testTrueFalse(): void

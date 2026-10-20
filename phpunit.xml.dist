@@ -18,6 +18,6 @@
 	</testsuites>
 	
 	<extensions>
-		<bootstrap class="DG\BypassFinals\PHPUnitExtension"></bootstrap>
+		<bootstrap class="DG\BypassFinals\PHPUnitExtension"/>
 	</extensions>
 </phpunit>

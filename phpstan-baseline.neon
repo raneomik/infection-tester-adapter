@@ -15,7 +15,3 @@ parameters:
 			identifier: method.childParameterType
 			count: 1
 			path: src/TesterAdapterFactory.php
-
-		-
-		    identifier: class.notFound
-		    path: tests/phpunit/Fixtures

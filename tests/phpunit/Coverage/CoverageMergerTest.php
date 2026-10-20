@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This code is licensed under the BSD 3-Clause License.
  *
@@ -35,12 +36,12 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
-use PHPUnit\Framework\Attributes\TestWith;
 use function dirname;
 use function extension_loaded;
 use function file_put_contents;
 use function mkdir;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\TestWith;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use RuntimeException;
@@ -52,6 +53,7 @@ use SebastianBergmann\CodeCoverage\Test\TestSize;
 use SebastianBergmann\CodeCoverage\Test\TestStatus;
 use function serialize;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
+use Throwable;
 
 #[Group('unit')]
 final class CoverageMergerTest extends FileSystemTestCase
@@ -73,9 +75,9 @@ final class CoverageMergerTest extends FileSystemTestCase
     }
 
     #[TestWith([
-            'error' => RuntimeException::class,
-            'message' => '/No coverage fragments found/',
-            'dir' => '/Fixtures/Files/tester',
+        'error' => RuntimeException::class,
+        'message' => '/No coverage fragments found/',
+        'dir' => '/Fixtures/Files/tester',
     ], 'RuntimeException')]
     #[TestWith([
         'error' => DirectoryNotFoundException::class,
@@ -89,9 +91,7 @@ final class CoverageMergerTest extends FileSystemTestCase
     ): void {
         $merger = new CoverageMerger();
 
-        /**
-         * @var class-string<\Throwable> $error
-         */
+        /** @var class-string<Throwable> $error */
         self::expectException($error);
         self::expectExceptionMessageMatches($message);
         $merger->merge(

@@ -1,8 +1,6 @@
 !/.tools/.gitkeep
 !/tests/e2e/*/var/.gitkeep
 !/tests/tests/phpunit/Fixtures/Files/*.dist.xml
-/tests/phpunit/Fixtures/Files/plain-junit.xml
-/tests/phpunit/Fixtures/Files/testcase-junit.xml
 .phpunit.result.cache
 /.php-cs-fixer.cache
 /.tools/
@@ -10,5 +8,7 @@
 /composer.lock
 /infection.log
 /tests/e2e/*/var/
+/tests/phpunit/Fixtures/Files/plain-junit.xml
+/tests/phpunit/Fixtures/Files/testcase-junit.xml
 /var/
 /vendor/

@@ -21,15 +21,12 @@ jobs:
 
         strategy:
             matrix:
-                php-version: [ '8.4', '8.5' ]
+                php-version: [ 8.4, 8.5 ]
                 coverage-driver: [ pcov, xdebug ]
                 symfony-require:
                     - '6.4.*'
                     - '7.4.*'
                     - '8.1.*'
-                exclude:
-                    -   php-version: '8.3'
-                        symfony-require: '^7'
 
         name: Unit tests on PHP ${{ matrix.php-version }} with Symfony ${{ matrix.symfony-require }} (${{ matrix.coverage-driver }})
 
@@ -87,7 +84,7 @@ jobs:
 
         strategy:
             matrix:
-                php-version: [ '8.3', '8.4', '8.5' ]
+                php-version: [ 8.4, 8.5 ]
                 coverage-driver: [ pcov, xdebug ]
 
         name: End-to-end with PHP ${{ matrix.php-version }} (${{ matrix.coverage-driver }})
