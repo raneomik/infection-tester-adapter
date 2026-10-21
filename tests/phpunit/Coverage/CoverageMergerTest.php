@@ -42,6 +42,8 @@ use function file_put_contents;
 use function mkdir;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\TestWith;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSizeResolver;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatusResolver;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use RuntimeException;
@@ -49,8 +51,6 @@ use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
 use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
 use SebastianBergmann\CodeCoverage\Filter;
-use SebastianBergmann\CodeCoverage\Test\TestSize;
-use SebastianBergmann\CodeCoverage\Test\TestStatus;
 use function serialize;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 use Throwable;
@@ -107,8 +107,10 @@ final class CoverageMergerTest extends FileSystemTestCase
 
         $driver = extension_loaded('pcov') ? new PcovDriver($filter) : new XdebugDriver($filter);
         $cc = new CodeCoverage($driver, $filter);
-        $cc->start('test::fixture', TestSize::Small);
-        $cc->stop(true, TestStatus::Success);
+        // @phpstan-ignore-next-line
+        $cc->start('test::fixture', TestSizeResolver::small());
+        // @phpstan-ignore-next-line
+        $cc->stop(true, TestStatusResolver::success());
 
         file_put_contents($dir . '/cc-fragment.phpser', serialize($cc));
     }

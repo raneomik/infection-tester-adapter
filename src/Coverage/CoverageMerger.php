@@ -40,9 +40,9 @@ use function file_get_contents;
 use function is_file;
 use function is_string;
 use function Pipeline\take;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\FacadeResolver;
 use RuntimeException;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
-use SebastianBergmann\CodeCoverage\Report\Xml\Facade as PhpUnitXmlFacade;
 use SplFileInfo;
 use function sprintf;
 use Symfony\Component\Filesystem\Filesystem;
@@ -172,7 +172,6 @@ final readonly class CoverageMerger
     {
         $this->filesystem->mkdir($outDir);
 
-        $facade = new PhpUnitXmlFacade();
-        $facade->process($outDir, $codeCoverage->getReport(), $codeCoverage->getTests());
+        FacadeResolver::processCoverage($codeCoverage, $outDir);
     }
 }
