@@ -1,3 +1,5 @@
 <?php
 
-Assert::fail('This test should fail');
+use Tester\Assert;
+
+Assert::fail('This test should fail', true);

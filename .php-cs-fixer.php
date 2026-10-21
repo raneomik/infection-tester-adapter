@@ -34,9 +34,6 @@
 
 declare(strict_types=1);
 
-use PhpCsFixer\Config;
-use PhpCsFixer\Finder;
-
 $header = \trim(\sprintf(
     'This code is licensed under the BSD 3-Clause License.%s',
     \substr(
@@ -45,7 +42,7 @@ $header = \trim(\sprintf(
     )
 ));
 
-$finder = Finder::create()
+$finder = (new PhpCsFixer\Finder())
     ->in(__DIR__)
     ->exclude([
         '.github',
@@ -58,11 +55,13 @@ $finder = Finder::create()
     ->name('*php')
 ;
 
-return (new Config())
+return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setRules([
         '@Symfony' => true,
         '@Symfony:risky' => true,
+        'declare_strict_types' => true,
+        'blank_line_after_opening_tag' => true,
         'blank_line_before_statement' => [
             'statements' => [
                 'break',
@@ -138,6 +137,7 @@ return (new Config())
         'phpdoc_no_empty_return' => true,
         'phpdoc_order' => true,
         'phpdoc_summary' => false,
+        'phpdoc_to_comment' => false,
         'self_static_accessor' => true,
         'single_line_throw' => false,
         'static_lambda' => true,

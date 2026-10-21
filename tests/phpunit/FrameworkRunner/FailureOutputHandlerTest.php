@@ -36,7 +36,6 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\FrameworkRunner;
 
-use function dirname;
 use Iterator;
 use function ob_get_clean;
 use function ob_start;
@@ -44,6 +43,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\FrameworkRunner\FailureOutputHandler;
+use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 use Tester\Runner\Test;
 
 #[Group('unit')]
@@ -54,16 +54,14 @@ final class FailureOutputHandlerTest extends TestCase
      */
     public static function useCases(): iterable
     {
-        $fixtureDir = dirname(__DIR__) . '/Fixtures/Files/tester/tests/';
-
         yield [
-            'test' => (new Test($fixtureDir . 'TestCaseTest.php'))
+            'test' => new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'))
                 ->withResult(Test::Passed, null),
             'expected' => '',
         ];
 
         yield [
-            'test' => (new Test($fixtureDir . 'PlainTest.php'))
+            'test' => new Test(fixtureFilesPath('/tester/tests/PlainTest.php'))
                 ->withResult(Test::Failed, null),
             'expected' => <<<XX
             
@@ -75,11 +73,11 @@ final class FailureOutputHandlerTest extends TestCase
         ];
 
         yield [
-            'test' => (new Test($fixtureDir . 'TestCaseTest.php'))
+            'test' => new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'))
                 ->withResult(Test::Failed, 'it failed'),
             'expected' => <<<XX
             
-            Tests: 1, Assertions: 3
+            Tests: 1, Assertions: 7
             App\Tester\Tests\TestCaseTest::test
             
             
@@ -87,12 +85,24 @@ final class FailureOutputHandlerTest extends TestCase
         ];
 
         yield [
-            'test' => (new Test($fixtureDir . 'TestCaseTest.php', 'testMethod'))
+            'test' => new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'), 'testMethod')
                 ->withResult(Test::Failed, 'it failed'),
             'expected' => <<<XX
             
-            Tests: 1, Assertions: 3
+            Tests: 1, Assertions: 7
             App\Tester\Tests\TestCaseTest::testMethod
+            
+            
+            XX,
+        ];
+
+        yield [
+            'test' => new Test(fixtureFilesPath('/tester/tests/MiscLargeTest.php'), 'testLargeMethod')
+                ->withResult(Test::Failed, 'it failed'),
+            'expected' => <<<XX
+            
+            Tests: 1, Assertions: 11
+            App\Tester\Tests\MiscLargeTest::testLargeMethod
             
             
             XX,
@@ -103,7 +113,7 @@ final class FailureOutputHandlerTest extends TestCase
     public function test_it_outputs(Test $test, string $expected): void
     {
         ob_start();
-        (new FailureOutputHandler())->finish($test);
+        new FailureOutputHandler()->finish($test);
         $output = ob_get_clean();
 
         self::assertSame($expected, $output);

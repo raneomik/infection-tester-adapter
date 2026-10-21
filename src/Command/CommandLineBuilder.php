@@ -47,6 +47,8 @@ use Symfony\Component\Process\PhpExecutableFinder;
  * Uses Tester's native options:
  * - `-p <path>` to specify PHP interpreter
  * - `-d <key=value>` to define INI entries
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Command\CommandLineBuilderTest
  */
 final class CommandLineBuilder
 {
@@ -79,7 +81,7 @@ final class CommandLineBuilder
      */
     private function findPhp(): string
     {
-        $phpExec = (new PhpExecutableFinder())->find();
+        $phpExec = new PhpExecutableFinder()->find();
 
         if (false === $phpExec) {
             throw new RuntimeException('PHP executable not found');

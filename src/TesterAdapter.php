@@ -48,7 +48,7 @@ use Symfony\Component\Process\Process;
 
 final class TesterAdapter implements TestFrameworkAdapter
 {
-    public const NAME = 'tester';
+    public const string NAME = 'tester';
 
     private ?string $cachedVersion = null;
 

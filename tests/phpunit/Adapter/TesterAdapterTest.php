@@ -60,11 +60,11 @@ use Symfony\Component\Filesystem\Path;
 #[Group('integration')]
 final class TesterAdapterTest extends FileSystemTestCase
 {
-    private const MUTATION_HASH = 'a1b2c3';
+    private const string MUTATION_HASH = 'a1b2c3';
 
-    private const ORIGINAL_FILE_PATH = '/original/file/path';
+    private const string ORIGINAL_FILE_PATH = '/original/file/path';
 
-    private const MUTATED_FILE_PATH = '/mutated/file/path';
+    private const string MUTATED_FILE_PATH = '/mutated/file/path';
 
     private string $pathToProject;
 
@@ -125,8 +125,8 @@ final class TesterAdapterTest extends FileSystemTestCase
     public function test_it_shows_version(): void
     {
         $testerAdapter = $this->createAdapter(null);
-        self::assertSame('2.6.0', $testerAdapter->getVersion());
-        self::assertSame('2.6.0', $testerAdapter->getVersion(), 'cached version');
+        self::assertSame('2.6.2', $testerAdapter->getVersion());
+        self::assertSame('2.6.2', $testerAdapter->getVersion(), 'cached version');
     }
 
     public function test_it_shows_recommendation(): void

@@ -36,7 +36,6 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
-use function class_exists;
 use function file_get_contents;
 use function is_file;
 use function is_string;
@@ -52,6 +51,8 @@ use function unserialize;
 
 /**
  * Merges coverage fragments and normalizes JUnit XML for Infection compatibility.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Coverage\CoverageMergerTest
  */
 final readonly class CoverageMerger
 {
@@ -67,7 +68,7 @@ final readonly class CoverageMerger
      * Merge coverage fragments and normalize JUnit XML.
      *
      * @param string $fragmentDir Directory containing coverage fragments
-     * @param string $outDir Directory to write merged coverage XML
+     * @param non-empty-string $outDir Directory to write merged coverage XML
      * @param string|null $junitPath Optional JUnit XML path to normalize
      *
      * @return int Exit code (0 = success)
@@ -98,10 +99,6 @@ final readonly class CoverageMerger
     private function mergeFragments(string $fragmentDir): ?CodeCoverage
     {
         $files = $this->findFragmentFiles($fragmentDir);
-
-        if ([] === $files) {
-            return null;
-        }
 
         $merged = null;
 
@@ -169,28 +166,13 @@ final readonly class CoverageMerger
     /**
      * Write merged coverage data in PHPUnit XML format.
      *
-     * Uses a UUID as the test identifier to avoid XPath conflicts.
+     * @param non-empty-string $outDir
      */
     private function writeCoverageXml(CodeCoverage $codeCoverage, string $outDir): void
     {
         $this->filesystem->mkdir($outDir);
 
-        $phpUnitVersion = $this->getPhpUnitVersion();
-        $facade = new PhpUnitXmlFacade($phpUnitVersion);
-        $facade->process($codeCoverage, $outDir);
-    }
-
-    /**
-     * Get the PHPUnit version for the XML writer.
-     */
-    private function getPhpUnitVersion(): string
-    {
-        if (!class_exists(\PHPUnit\Runner\Version::class)) {
-            return 'unknown';
-        }
-
-        $versionClass = \PHPUnit\Runner\Version::class;
-
-        return $versionClass::id();
+        $facade = new PhpUnitXmlFacade();
+        $facade->process($outDir, $codeCoverage->getReport(), $codeCoverage->getTests());
     }
 }

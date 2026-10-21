@@ -51,7 +51,7 @@ use function sys_get_temp_dir;
 
 abstract class FileSystemTestCase extends TestCase
 {
-    private const TMP_DIR_NAME = 'infection-test';
+    private const string TMP_DIR_NAME = 'infection-test';
 
     protected string $cwd;
 
@@ -79,7 +79,7 @@ abstract class FileSystemTestCase extends TestCase
 
     protected function tearDown(): void
     {
-        (new Filesystem())->remove($this->tmp);
+        new Filesystem()->remove($this->tmp);
     }
 
     public static function asserChmod(string $expectedPerms, string $path): void
@@ -101,7 +101,7 @@ abstract class FileSystemTestCase extends TestCase
 
     final protected static function removeTmpDir(): void
     {
-        (new Filesystem())->remove(
+        new Filesystem()->remove(
             normalizePath(
                 realpath(sys_get_temp_dir()) . '/' . self::TMP_DIR_NAME,
             ),

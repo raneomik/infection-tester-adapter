@@ -36,12 +36,13 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
-use function dirname;
 use Iterator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
+use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
+use SebastianBergmann\CodeCoverage\Test\TestSize;
 
 #[Group('unit')]
 final class CoveringTestIdentifierTest extends TestCase
@@ -53,54 +54,79 @@ final class CoveringTestIdentifierTest extends TestCase
      *     expectedId: string
      * }>
      */
-    public static function fileIdCases(): iterable
+    public static function fileToIdentifyCases(): iterable
     {
-        $fixtures = dirname(__DIR__) . '/Fixtures/Files/tester';
-
-        yield 'testCase with existing method' => [
-            'arg' => '--method=testNothing',
-            'file' => $fixtures . '/tests/TestCaseTest.php',
-            'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::testNothing',
+        yield 'non test file' => [
+            'arg' => '',
+            'file' => '/tester/tests/bootstrap.php',
+            'expectedId' => 'not-to-cover',
+            'expectedSize' => TestSize::Unknown,
         ];
 
-        yield 'testCase with no method' => [
+        yield 'test with no test but Test.php suffix' => [
             'arg' => '',
-            'file' => $fixtures . '/tests/TestCaseTest.php',
-            'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::test',
+            'file' => '/tester/tests/NamespacedPlainTest.php',
+            'expectedId' => 'App\Tester\Tests\NamespacedPlainTest::test',
+            'expectedSize' => TestSize::Unknown,
         ];
 
         yield 'plain test without namespace' => [
             'arg' => '',
-            'file' => $fixtures . '/tests/PlainTest.php',
+            'file' => '/tester/tests/PlainTest.php',
             'expectedId' => 'PlainTest::test',
+            'expectedSize' => TestSize::Unknown,
         ];
 
-        yield 'plain test' => [
-            'arg' => '',
-            'file' => $fixtures . '/tests/NamespacedPlainTest.php',
-            'expectedId' => 'App\Tester\Tests\NamespacedPlainTest::test',
+        yield 'plain test with virtual method' => [
+            'arg' => '--method=test',
+            'file' => '/tester/tests/PlainTest.php',
+            'expectedId' => 'PlainTest::test',
+            'expectedSize' => TestSize::Small,
         ];
 
-        yield 'non test file' => [
+        yield 'testCase with no method' => [
             'arg' => '',
-            'file' => $fixtures . '/tests/bootstrap.php',
-            'expectedId' => 'not-to-cover',
+            'file' => '/tester/tests/TestCaseTest.php',
+            'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::test',
+            'expectedSize' => TestSize::Unknown,
+        ];
+
+        yield 'testCase with existing method' => [
+            'arg' => '--method=testString',
+            'file' => '/tester/tests/TestCaseTest.php',
+            'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::testString',
+            'expectedSize' => TestSize::Small,
+        ];
+
+        yield 'testCase with largest assert count' => [
+            'arg' => '--method=testTrueFalseSame',
+            'file' => '/tester/tests/TestCaseTest.php',
+            'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::testTrueFalseSame',
+            'expectedSize' => TestSize::Medium,
+        ];
+
+        yield 'large testCase' => [
+            'arg' => '--method=testSomethingLarge',
+            'file' => '/tester/tests/MiscLargeTest.php',
+            'expectedId' => \App\Tester\Tests\MiscLargeTest::class . '::testSomethingLarge',
+            'expectedSize' => TestSize::Large,
         ];
     }
 
-    #[DataProvider('fileIdCases')]
+    #[DataProvider('fileToIdentifyCases')]
     public function test_it_identifies_test(
         string $arg,
         string $file,
         string $expectedId,
+        TestSize $expectedSize,
     ): void {
         $_SERVER['argv'] = ['php', $arg];
 
-        $identifier = new CoveringTestIdentifier([$file]);
+        $filepath = fixtureFilesPath($file);
+        $identifier = new CoveringTestIdentifier([$filepath]);
 
-        $testId = $identifier->identifyTest();
-
-        self::assertSame($expectedId, $testId);
+        self::assertSame($expectedId, $identifier->identifyTest());
+        self::assertSame($expectedSize, $identifier->identifySize());
     }
 
     /**

@@ -65,7 +65,7 @@ final class CommandLineBuilderTest extends TestCase
 
         self::assertContains('testing-fwk', $fwkCmd = $this->commandLineBuilder->build('testing-fwk', ['blabla'], ['', '']));
         self::assertContains('-p', $fwkCmd);
-        self::assertContains((new PhpExecutableFinder())->find(false), $fwkCmd);
+        self::assertContains(new PhpExecutableFinder()->find(false), $fwkCmd);
         self::assertContains('blabla', $fwkCmd);
         self::assertNotContains('', $fwkCmd);
     }

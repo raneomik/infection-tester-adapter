@@ -57,7 +57,7 @@ use function register_shutdown_function;
 use function rtrim;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Filter;
-use SebastianBergmann\CodeCoverage\Test\TestStatus\TestStatus;
+use SebastianBergmann\CodeCoverage\Test\TestStatus;
 use function serialize;
 use SplFileInfo;
 use function sprintf;
@@ -256,7 +256,7 @@ final class CoverageRuntime
     private function dumpCoverage(CodeCoverage $codeCoverage): void
     {
         try {
-            $codeCoverage->stop(true, TestStatus::success());
+            $codeCoverage->stop(true, TestStatus::Success);
         } catch (Throwable) {
             // Ignore errors during stop
         }

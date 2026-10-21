@@ -46,6 +46,8 @@ use Tester\Helpers;
 /**
  * Detects which PHP coverage driver is available.
  * Priority: PCOV > PHPDBG > Xdebug (following Tester philosophy)
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Coverage\CoverageDriverProviderTest
  */
 final readonly class CoverageDriverProvider
 {

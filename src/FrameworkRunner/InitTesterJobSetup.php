@@ -41,6 +41,8 @@ use Tester\Runner\Runner;
 
 /**
  * Configures Tester Runner for coverage collection.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\FrameworkRunner\InitTesterJobSetupTest
  */
 final class InitTesterJobSetup
 {

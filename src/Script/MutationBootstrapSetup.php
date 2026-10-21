@@ -73,7 +73,7 @@ final readonly class MutationBootstrapSetup
         string $originalFilePath,
         string $mutatedFilePath,
     ): void {
-        (new self($originalFilePath, $mutatedFilePath))->setup();
+        new self($originalFilePath, $mutatedFilePath)->setup();
     }
 
     /**

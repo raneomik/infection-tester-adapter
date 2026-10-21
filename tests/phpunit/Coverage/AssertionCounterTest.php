@@ -36,39 +36,51 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
-use function dirname;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\Coverage\AssertionsCounter;
+use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 
 #[Group('unit')]
 final class AssertionCounterTest extends TestCase
 {
     public function test_it_counts_asserts(): void
     {
-        $testDir = dirname(__DIR__) . '/Fixtures/Files/tester/tests/';
+        $testPath = fixtureFilesPath('/tester/tests/PlainTest.php');
         $counter = AssertionsCounter::getInstance();
 
-        self::assertSame(['total' => 1], $counter->countAssertions($testDir . '/PlainTest.php'));
-        self::assertSame(['total' => 1], $counter->countAssertions($testDir . '/PlainTest.php', ''), 'from cache');
+        self::assertSame(['total' => 1], $counter->countAssertions($testPath));
+        self::assertSame(['total' => 1], $counter->countAssertions($testPath, ''), 'from cache');
 
+        $testPath = fixtureFilesPath('/tester/tests/TestCaseTest.php');
         self::assertSame([
             'testFail' => 1,
-            'testTrueFalse' => 2,
-            'total' => 3,
-        ], $counter->countAssertions($testDir . '/TestCaseTest.php'));
-        self::assertSame(2, $counter->countInMethod($testDir . '/TestCaseTest.php', 'testTrueFalse'));
-        self::assertSame(1, $counter->countInMethod($testDir . '/TestCaseTest.php', 'testFail'));
+            'testTrueFalseSame' => 4,
+            'testString' => 1,
+            'testException' => 1,
+            'total' => 7,
+        ], $counter->countAssertions($testPath));
+        self::assertSame(4, $counter->countInMethod($testPath, 'testTrueFalseSame'));
+        self::assertSame(1, $counter->countInMethod($testPath, 'testFail'));
+
+        $testPath = fixtureFilesPath('/tester/tests/MiscLargeTest.php');
+        self::assertSame([
+            'testSomethingLarge' => 11,
+            'total' => 11,
+        ], $counter->countAssertions($testPath));
+        self::assertSame(11, $counter->countInMethod($testPath, 'testSomethingLarge'));
+        self::assertSame(0, $counter->countInMethod($testPath, 'testFail'));
     }
 
     public function test_it_counts_asserts_in_notfound_test(): void
     {
-        $testDir = dirname(__DIR__) . '/Fixtures/Files/tester/tests/';
+        $testPath = fixtureFilesPath('/tester/tests/NotFoundTest.php');
         $counter = AssertionsCounter::getInstance();
-        self::assertSame(['total' => 0], $counter->countAssertions($testDir . '/NotFoundTest.php'));
-        self::assertSame(['total' => 0], $counter->countAssertions($testDir . '/NotFoundTest.php', ''), 'from cache');
+        self::assertSame(['total' => 0], $counter->countAssertions($testPath));
+        self::assertSame(['total' => 0], $counter->countAssertions($testPath, ''), 'from cache');
 
-        self::assertSame(0, $counter->countInMethod($testDir . '/PlainTest.php', 'testNotHere'));
+        $testPath = fixtureFilesPath('/tester/tests/PlainTest.php');
+        self::assertSame(0, $counter->countInMethod($testPath, 'testNotHere'));
     }
 
     public function test_it_resets_new_instance(): void

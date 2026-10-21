@@ -45,6 +45,8 @@ use Tester\Runner\Test;
 
 /**
  * @internal
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\FrameworkRunner\FailureOutputHandlerTest
  */
 final readonly class FailureOutputHandler implements OutputHandler
 {

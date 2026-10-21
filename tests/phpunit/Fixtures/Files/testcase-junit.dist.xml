@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+	<testsuite errors="0" skipped="0" tests="26" time="0.3" timestamp="2026-02-19T23:08:20">
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testAddition" name="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testAddition"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testDivision" name="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testDivision"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testSubtraction" name="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testSubtraction"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testAbsolute" name="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testAbsolute"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatFullName" name="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatFullName"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testMultiplication" name="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testMultiplication"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testDivisionByZero" name="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testDivisionByZero"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testIsPositive" name="%root%/tests/e2e/tests/TestCase/Covered/CalculatorTest.php method=testIsPositive"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatFirstNameOnly" name="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatFirstNameOnly"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatEmptyNames" name="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatEmptyNames"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatWithSpaces" name="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatWithSpaces"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddUserWithEmptyEmail" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddUserWithEmptyEmail"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatLastNameOnly" name="%root%/tests/e2e/tests/TestCase/Covered/FormatNameFunctionTest.php method=testFormatLastNameOnly"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddDuplicateUser" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddDuplicateUser"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddUser" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddUser"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddUserWithEmptyName" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testAddUserWithEmptyName"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testRemoveUser" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testRemoveUser"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testRemoveNonExistentUser" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testRemoveNonExistentUser"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testUserExists" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testUserExists"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testGetNonExistentUser" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testGetNonExistentUser"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testGetLogs" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testGetLogs"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testGetUser" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testGetUser"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testClearLogs" name="%root%/tests/e2e/tests/TestCase/Covered/UserServiceTest.php method=testClearLogs"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/Inner/InnerSourceClassTest.php method=testSubtraction" name="%root%/tests/e2e/tests/TestCase/Inner/InnerSourceClassTest.php method=testSubtraction"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/SourceClassTest.php method=testFloatAddition" name="%root%/tests/e2e/tests/TestCase/SourceClassTest.php method=testFloatAddition"/>
+		<testcase classname="%root%/tests/e2e/tests/TestCase/SourceClassTest.php method=testAddition" name="%root%/tests/e2e/tests/TestCase/SourceClassTest.php method=testAddition"/>
+	</testsuite>
+</testsuites>

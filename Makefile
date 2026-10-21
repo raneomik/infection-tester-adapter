@@ -6,7 +6,7 @@ MAKEFLAGS += --no-builtin-rules
 
 .PHONY: help
 help:
-	@printf "\033[33mUsage:\033[0m\n  make TARGET\n\n\033[32m#\n# Commands\n#---------------------------------------------------------------------------\033[0m\n\n"
+	@printf "\033[33mUsage:\033[0m\n  make TARGET\n\033[32m\n Commands: \n------------------------------------------\033[0m\n"
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//' | awk 'BEGIN {FS = ":"}; {printf "\033[33m%s:\033[0m%s\n", $$1, $$2}'
 
 # Rector
@@ -33,11 +33,11 @@ MIN_COVERED_MSI=71 #82
 INFECTION_ARGS=--min-msi=$(MIN_MSI) --min-covered-msi=$(MIN_COVERED_MSI) --threads=max --no-interaction --show-mutations=0
 
 .PHONY: all
-all:	 ## Executes all checks
+all:		## Executes all checks
 all: cs test
 
 .PHONY: cs
-cs:	 ## Apply CS fixes
+cs:		## Apply CS fixes
 cs: gitignore composer-validate rector php-cs-fixer
 
 .PHONY: gitignore
@@ -50,14 +50,15 @@ composer-validate: vendor/autoload.php
 	@composer dumpautoload --strict-psr --dev -a -o
 
 .PHONY: rector
-rector:
+rector:		## Executes rector
 	@$(RECTOR)
 
 .PHONY: cs-lint
-cs-lint: ## Run CS checks
+cs-lint:	## Run CS checks
 cs-lint: php-cs-fixer-lint
 
 .PHONY: php-cs-fixer
+php-cs-fixer: 	## Executes CS fixer
 php-cs-fixer: $(PHP_CS_FIXER) vendor/autoload.php
 	$(PHP_CS_FIXER) fix --verbose --diff
 
@@ -66,18 +67,20 @@ php-cs-fixer-lint: $(PHP_CS_FIXER) vendor/autoload.php
 	$(PHP_CS_FIXER) fix --verbose --diff --dry-run
 
 .PHONY: test
-test:	 ## Executes the tests
+test:		## Executes the tests
 test: phpstan test-unit infection test-e2e
 
 .PHONY: phpstan
-phpstan:
+phpstan:	## Executes phpstan
 	$(PHPSTAN) $(PHPSTAN_ARGS) --no-progress
 
 .PHONY: test-unit
+test-unit:	## Executes unit tests
 test-unit: vendor/autoload.php
 	XDEBUG_MODE=coverage $(PHPUNIT) $(PHPUNIT_ARGS)
 
 .PHONY: test-e2e
+test-e2e: 	## Executes e2e tests
 test-e2e: vendor/autoload.php
 	tests/e2e_tests
 

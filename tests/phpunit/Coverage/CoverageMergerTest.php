@@ -38,57 +38,78 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
 use function dirname;
 use function extension_loaded;
+use function file_put_contents;
+use function mkdir;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\TestWith;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use RuntimeException;
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
+use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
+use SebastianBergmann\CodeCoverage\Filter;
+use SebastianBergmann\CodeCoverage\Test\TestSize;
+use SebastianBergmann\CodeCoverage\Test\TestStatus;
+use function serialize;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
+use Throwable;
 
 #[Group('unit')]
 final class CoverageMergerTest extends FileSystemTestCase
 {
     public function test_it_merges_fragments(): void
     {
+        $fragDir = $this->tmp . '/fragments';
+        mkdir($fragDir, 0755, true);
+        $this->writeFragment($fragDir);
+
         $merger = new CoverageMerger();
-
-        $fragDir = dirname(__DIR__) . '/Fixtures/Files/fragments/xdebug';
-
-        if (extension_loaded('pcov')) {
-            $fragDir = dirname(__DIR__) . '/Fixtures/Files/fragments/pcov';
-        }
 
         self::assertDirectoryDoesNotExist($this->tmp . '/coverage-xml');
 
-        $out = $merger->merge(
-            $fragDir,
-            $this->tmp . '/coverage-xml',
-        );
+        $out = $merger->merge($fragDir, $this->tmp . '/coverage-xml');
 
         self::assertDirectoryExists($this->tmp . '/coverage-xml');
         self::assertSame(0, $out);
     }
 
-    public function test_it_outputs_error(): void
-    {
+    #[TestWith([
+        'error' => RuntimeException::class,
+        'message' => '/No coverage fragments found/',
+        'dir' => '/Fixtures/Files/tester',
+    ], 'RuntimeException')]
+    #[TestWith([
+        'error' => DirectoryNotFoundException::class,
+        'message' => '/directory does not exist/',
+        'dir' => 'not-existing-dir',
+    ], 'DirectoryNotFoundException')]
+    public function test_it_outputs_error(
+        string $error,
+        string $message,
+        string $dir,
+    ): void {
         $merger = new CoverageMerger();
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessageMatches('/No coverage fragments found/');
+        /** @var class-string<Throwable> $error */
+        self::expectException($error);
+        self::expectExceptionMessageMatches($message);
         $merger->merge(
-            dirname(__DIR__) . '/Fixtures/Files/tester',
+            dirname(__DIR__) . $dir,
             $this->tmp . '/coverage-xml',
         );
     }
 
-    public function test_it_(): void
+    private function writeFragment(string $dir): void
     {
-        $merger = new CoverageMerger();
+        $filter = new Filter();
+        $filter->includeFiles([__FILE__]);
 
-        self::expectException(DirectoryNotFoundException::class);
-        self::expectExceptionMessageMatches('/directory does not exist/');
-        $merger->merge(
-            'not-existing-dir',
-            $this->tmp . '/coverage-xml',
-        );
+        $driver = extension_loaded('pcov') ? new PcovDriver($filter) : new XdebugDriver($filter);
+        $cc = new CodeCoverage($driver, $filter);
+        $cc->start('test::fixture', TestSize::Small);
+        $cc->stop(true, TestStatus::Success);
+
+        file_put_contents($dir . '/cc-fragment.phpser', serialize($cc));
     }
 }
