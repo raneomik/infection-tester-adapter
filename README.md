@@ -17,9 +17,9 @@ Disclaimer: AI agent experiment
 > _and share the result._
 >
 > _The remaining ~20% was based on [PhpSpec Adapter][phpspec-adapter] and [Codeception Adapter][codeception-adapter]. Big shoutout to Maks Rafalko & Infection community for this amazing tool_
+</details>
 
 This package provides test framework adapter of [Tester][tester] for [infection][infection].
-</details>
 
 ![Architecture](./docs/tester-adapter.png)
 
