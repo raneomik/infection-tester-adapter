@@ -39,34 +39,42 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester\Command;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
+use RuntimeException;
 use Symfony\Component\Process\PhpExecutableFinder;
 
 #[Group('unit')]
 final class CommandLineBuilderTest extends TestCase
 {
-    private CommandLineBuilder $commandLineBuilder;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->commandLineBuilder = new CommandLineBuilder();
-    }
-
     public function test_it_builds_cli_args(): void
     {
-        self::assertSame(['test'], $this->commandLineBuilder->build('test', ['', ''], ['']));
+        $commandLineBuilder = new CommandLineBuilder();
 
-        self::assertContains('test.bat', $batchSim = $this->commandLineBuilder->build('test.bat', [''], ['blabla', '']));
+        self::assertSame(['test'], $commandLineBuilder->build('test', ['', ''], ['']));
+
+        self::assertContains('test.bat', $batchSim = $commandLineBuilder->build('test.bat', [''], ['blabla', '']));
         self::assertContains('blabla', $batchSim);
         self::assertNotContains('', $batchSim);
         self::assertNotContains('-p', $batchSim);
         self::assertNotContains('php', $batchSim);
 
-        self::assertContains('testing-fwk', $fwkCmd = $this->commandLineBuilder->build('testing-fwk', ['blabla'], ['', '']));
+        self::assertContains('testing-fwk', $fwkCmd = $commandLineBuilder->build('testing-fwk', ['blabla'], ['', '']));
         self::assertContains('-p', $fwkCmd);
-        self::assertContains(new PhpExecutableFinder()->find(false), $fwkCmd);
+        self::assertContains((new PhpExecutableFinder())->find(false), $fwkCmd);
         self::assertContains('blabla', $fwkCmd);
         self::assertNotContains('', $fwkCmd);
+    }
+
+    public function test_it_does_not_find_php_bin(): void
+    {
+        $mock = $this->createMock(PhpExecutableFinder::class);
+        $mock->expects(self::once())
+            ->method('find')
+            ->willReturn(false);
+
+        $commandLineBuilder = new CommandLineBuilder($mock);
+
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('PHP executable not found');
+        $commandLineBuilder->build('test', ['blabla'], ['', '']);
     }
 }

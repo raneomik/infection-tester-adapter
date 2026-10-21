@@ -36,7 +36,6 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Compatibility;
 
-use function class_exists;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Report\Xml\Facade;
 
@@ -46,29 +45,17 @@ use SebastianBergmann\CodeCoverage\Report\Xml\Facade;
  *
  * @internal
  */
-final readonly class FacadeResolver extends AbstractLegacyResolver
+final readonly class XMLCoverageProcessor extends AbstractCrossCompatResolver
 {
-    public static function processCoverage(CodeCoverage $codeCoverage, string $outDir): void
+    public static function process(CodeCoverage $codeCoverage, string $outDir): void
     {
         if (self::isLegacy()) {
-            $facade = new Facade(self::getPhpUnitVersion());
-            $facade->process($codeCoverage, $outDir);
+            (new Facade(self::phpUnitVersion()))
+                ->process($codeCoverage, $outDir);
 
             return;
         }
 
-        // @phpstan-ignore-next-line
-        $facade = new Facade();
-        // @phpstan-ignore-next-line
-        $facade->process($outDir, $codeCoverage->getReport());
-    }
-
-    private static function getPhpUnitVersion(): string
-    {
-        if (!class_exists(\PHPUnit\Runner\Version::class)) {
-            return 'unknown';
-        }
-
-        return \PHPUnit\Runner\Version::id();
+        (new Facade())->process($outDir, $codeCoverage->getReport(), $codeCoverage->getTests());
     }
 }

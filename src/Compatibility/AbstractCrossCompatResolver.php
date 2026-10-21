@@ -36,20 +36,31 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Compatibility;
 
-use PHPUnit\Runner\Version;
+use function class_exists;
+use PHPUnit\Runner\Version as PHPUnitRunnerVersion;
+use SebastianBergmann\CodeCoverage\Version as CodeCoverageVersion;
 use function version_compare;
 
 /**
  * @internal
  */
-readonly class AbstractLegacyResolver
+abstract readonly class AbstractCrossCompatResolver
 {
     /**
      * Returns true when php-code-coverage < v14 is installed (TestSize/TestStatus are abstract classes,
      * not enums, and live under a sub-namespace Test\TestSize\TestSize).
      */
-    public static function isLegacy(): bool
+    protected static function isLegacy(): bool
     {
-        return version_compare(Version::id(), '14', '<');
+        return version_compare(CodeCoverageVersion::id(), '14', '<');
+    }
+
+    protected static function phpUnitVersion(): string
+    {
+        if (class_exists(PHPUnitRunnerVersion::class)) {
+            return PHPUnitRunnerVersion::id();
+        }
+
+        return 'unknown';
     }
 }

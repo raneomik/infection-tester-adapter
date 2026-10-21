@@ -36,20 +36,41 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Compatibility;
 
+use SebastianBergmann\CodeCoverage\Test\TestSize as TestSizeEnum;
+use SebastianBergmann\CodeCoverage\Test\TestSize\TestSize as LegacyTestSize;
+
 /**
- * Provides TestStatus values compatible with both php-code-coverage v12 (class-based) and v14 (enum).
+ * Provides TestSize values compatible with both php-code-coverage v12 (class-based) and v14 (enum).
  *
  * @internal
  */
-final readonly class TestStatusResolver extends AbstractLegacyResolver
+final readonly class TestSize extends AbstractCrossCompatResolver
 {
-    public static function success(): mixed
+    public static function unknown(): LegacyTestSize|TestSizeEnum
     {
-        if (self::isLegacy()) {
-            return \SebastianBergmann\CodeCoverage\Test\TestStatus\TestStatus::success();
-        }
+        return self::isLegacy()
+            ? LegacyTestSize::unknown()
+            : TestSizeEnum::Unknown;
+    }
 
-        // @phpstan-ignore-next-line
-        return \SebastianBergmann\CodeCoverage\Test\TestStatus::Success;
+    public static function small(): LegacyTestSize|TestSizeEnum
+    {
+        return self::isLegacy()
+            ? LegacyTestSize::small()
+            : TestSizeEnum::Small;
+    }
+
+    public static function medium(): LegacyTestSize|TestSizeEnum
+    {
+        return self::isLegacy()
+            ? LegacyTestSize::medium()
+            : TestSizeEnum::Medium;
+    }
+
+    public static function large(): LegacyTestSize|TestSizeEnum
+    {
+        return self::isLegacy()
+            ? LegacyTestSize::large()
+            : TestSizeEnum::Large;
     }
 }

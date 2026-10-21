@@ -44,6 +44,7 @@ return RectorConfig::configure()
         __DIR__ . '/src',
         __DIR__ . '/tests/phpunit',
     ])
+    ->withSkipPath(__DIR__ . '/src/Compatibility')
 
     ->withPreparedSets(
         deadCode: true,
@@ -56,7 +57,7 @@ return RectorConfig::configure()
         symfonyCodeQuality: true,
     )
 
-    ->withPhpSets(php84: true)
+    ->withPhpSets(php83: true)
 
     ->withCodeQualityLevel(49)
 

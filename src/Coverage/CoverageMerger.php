@@ -40,7 +40,7 @@ use function file_get_contents;
 use function is_file;
 use function is_string;
 use function Pipeline\take;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\FacadeResolver;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\XMLCoverageProcessor;
 use RuntimeException;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SplFileInfo;
@@ -172,6 +172,6 @@ final readonly class CoverageMerger
     {
         $this->filesystem->mkdir($outDir);
 
-        FacadeResolver::processCoverage($codeCoverage, $outDir);
+        XMLCoverageProcessor::process($codeCoverage, $outDir);
     }
 }

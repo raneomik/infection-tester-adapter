@@ -36,17 +36,55 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
+use function chmod;
 use Iterator;
+use function method_exists;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSizeResolver;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
 use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
+use function touch;
+use function unlink;
 
 #[Group('unit')]
 final class CoveringTestIdentifierTest extends TestCase
 {
+    private const string NotReadableTest = 'NotReadableTest.php';
+
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+
+        touch(self::NotReadableTest);
+        chmod(self::NotReadableTest, 0000);
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        unlink(self::NotReadableTest);
+
+        parent::tearDownAfterClass();
+    }
+
+    #[TestWith([
+        'file' => '/vendor/SomeTest.php',
+    ], 'vendor test to skip')]
+    #[TestWith([
+        'file' => '/NotExistingTest.php',
+    ], 'test not found to skip')]
+    #[TestWith([
+        'file' => self::NotReadableTest,
+    ], 'not readable test to skip')]
+    public function test_it_doesnt_cover(string $file): void
+    {
+        $identifier = new CoveringTestIdentifier([$file]);
+
+        self::assertSame('not-to-cover', $identifier->identifyTest());
+    }
+
     /**
      * @return iterable<array{
      *     arg: string,
@@ -60,56 +98,56 @@ final class CoveringTestIdentifierTest extends TestCase
             'arg' => '',
             'file' => '/tester/tests/bootstrap.php',
             'expectedId' => 'not-to-cover',
-            'expectedSize' => TestSizeResolver::unknown(),
+            'expectedSize' => TestSize::unknown(),
         ];
 
         yield 'test with no test but Test.php suffix' => [
             'arg' => '',
             'file' => '/tester/tests/NamespacedPlainTest.php',
             'expectedId' => 'App\Tester\Tests\NamespacedPlainTest::test',
-            'expectedSize' => TestSizeResolver::unknown(),
+            'expectedSize' => TestSize::unknown(),
         ];
 
         yield 'plain test without namespace' => [
             'arg' => '',
             'file' => '/tester/tests/PlainTest.php',
             'expectedId' => 'PlainTest::test',
-            'expectedSize' => TestSizeResolver::unknown(),
+            'expectedSize' => TestSize::unknown(),
         ];
 
         yield 'plain test with virtual method' => [
             'arg' => '--method=test',
             'file' => '/tester/tests/PlainTest.php',
             'expectedId' => 'PlainTest::test',
-            'expectedSize' => TestSizeResolver::small(),
+            'expectedSize' => TestSize::small(),
         ];
 
         yield 'testCase with no method' => [
             'arg' => '',
             'file' => '/tester/tests/TestCaseTest.php',
             'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::test',
-            'expectedSize' => TestSizeResolver::unknown(),
+            'expectedSize' => TestSize::unknown(),
         ];
 
         yield 'testCase with existing method' => [
             'arg' => '--method=testString',
             'file' => '/tester/tests/TestCaseTest.php',
             'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::testString',
-            'expectedSize' => TestSizeResolver::small(),
+            'expectedSize' => TestSize::small(),
         ];
 
         yield 'testCase with largest assert count' => [
             'arg' => '--method=testTrueFalseSame',
             'file' => '/tester/tests/TestCaseTest.php',
             'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::testTrueFalseSame',
-            'expectedSize' => TestSizeResolver::medium(),
+            'expectedSize' => TestSize::medium(),
         ];
 
         yield 'large testCase' => [
             'arg' => '--method=testSomethingLarge',
             'file' => '/tester/tests/MiscLargeTest.php',
             'expectedId' => \App\Tester\Tests\MiscLargeTest::class . '::testSomethingLarge',
-            'expectedSize' => TestSizeResolver::large(),
+            'expectedSize' => TestSize::large(),
         ];
     }
 
@@ -118,7 +156,7 @@ final class CoveringTestIdentifierTest extends TestCase
         string $arg,
         string $file,
         string $expectedId,
-        mixed $expectedSize,
+        object $expectedSize,
     ): void {
         $_SERVER['argv'] = ['php', $arg];
 
@@ -126,7 +164,13 @@ final class CoveringTestIdentifierTest extends TestCase
         $identifier = new CoveringTestIdentifier([$filepath]);
 
         self::assertSame($expectedId, $identifier->identifyTest());
-        self::assertSame($expectedSize, $identifier->identifySize());
+
+        // @phpstan-ignore-next-line return.type
+        $unify = static fn (object $value): string|object => method_exists($value, 'asString')
+            ? $value->asString()
+            : $value;
+
+        self::assertSame($unify($expectedSize), $unify($identifier->identifySize()));
     }
 
     /**

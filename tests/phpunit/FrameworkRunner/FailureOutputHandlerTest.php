@@ -55,13 +55,13 @@ final class FailureOutputHandlerTest extends TestCase
     public static function useCases(): iterable
     {
         yield [
-            'test' => new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'))
+            'test' => (new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php')))
                 ->withResult(Test::Passed, null),
             'expected' => '',
         ];
 
         yield [
-            'test' => new Test(fixtureFilesPath('/tester/tests/PlainTest.php'))
+            'test' => (new Test(fixtureFilesPath('/tester/tests/PlainTest.php')))
                 ->withResult(Test::Failed, null),
             'expected' => <<<XX
             
@@ -73,7 +73,7 @@ final class FailureOutputHandlerTest extends TestCase
         ];
 
         yield [
-            'test' => new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'))
+            'test' => (new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php')))
                 ->withResult(Test::Failed, 'it failed'),
             'expected' => <<<XX
             
@@ -85,7 +85,7 @@ final class FailureOutputHandlerTest extends TestCase
         ];
 
         yield [
-            'test' => new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'), 'testMethod')
+            'test' => (new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'), 'testMethod'))
                 ->withResult(Test::Failed, 'it failed'),
             'expected' => <<<XX
             
@@ -97,7 +97,7 @@ final class FailureOutputHandlerTest extends TestCase
         ];
 
         yield [
-            'test' => new Test(fixtureFilesPath('/tester/tests/MiscLargeTest.php'), 'testLargeMethod')
+            'test' => (new Test(fixtureFilesPath('/tester/tests/MiscLargeTest.php'), 'testLargeMethod'))
                 ->withResult(Test::Failed, 'it failed'),
             'expected' => <<<XX
             
@@ -113,7 +113,7 @@ final class FailureOutputHandlerTest extends TestCase
     public function test_it_outputs(Test $test, string $expected): void
     {
         ob_start();
-        new FailureOutputHandler()->finish($test);
+        (new FailureOutputHandler())->finish($test);
         $output = ob_get_clean();
 
         self::assertSame($expected, $output);

@@ -48,7 +48,7 @@ use function is_dir;
 use function mkdir;
 use function random_bytes;
 use function random_int;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatusResolver;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
 use function realpath;
@@ -115,8 +115,7 @@ final class CoverageRuntime
             @mkdir($fragmentDir, 0777, true);
         }
 
-        $runtime = new self($fragmentDir, $srcDirs);
-        $runtime->cover();
+        (new self($fragmentDir, $srcDirs))->cover();
     }
 
     private function cover(): void
@@ -257,7 +256,7 @@ final class CoverageRuntime
     {
         try {
             // @phpstan-ignore-next-line
-            $codeCoverage->stop(true, TestStatusResolver::success());
+            $codeCoverage->stop(true, TestStatus::success());
         } catch (Throwable) {
             // Ignore errors during stop
         }

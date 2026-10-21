@@ -36,44 +36,32 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
+use function basename;
 use function dirname;
 use function extension_loaded;
+use function file_get_contents;
 use function file_put_contents;
 use function mkdir;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\TestWith;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSizeResolver;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatusResolver;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
+use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 use RuntimeException;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
 use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
 use SebastianBergmann\CodeCoverage\Filter;
 use function serialize;
+use function str_replace;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 use Throwable;
 
 #[Group('unit')]
 final class CoverageMergerTest extends FileSystemTestCase
 {
-    public function test_it_merges_fragments(): void
-    {
-        $fragDir = $this->tmp . '/fragments';
-        mkdir($fragDir, 0755, true);
-        $this->writeFragment($fragDir);
-
-        $merger = new CoverageMerger();
-
-        self::assertDirectoryDoesNotExist($this->tmp . '/coverage-xml');
-
-        $out = $merger->merge($fragDir, $this->tmp . '/coverage-xml');
-
-        self::assertDirectoryExists($this->tmp . '/coverage-xml');
-        self::assertSame(0, $out);
-    }
-
     #[TestWith([
         'error' => RuntimeException::class,
         'message' => '/No coverage fragments found/',
@@ -100,18 +88,52 @@ final class CoverageMergerTest extends FileSystemTestCase
         );
     }
 
-    private function writeFragment(string $dir): void
+    public function test_it_merges_fragments(): void
     {
+        [$fragDir, $junit] = $this->writeFragment();
+
+        $merger = new CoverageMerger();
+
+        self::assertDirectoryDoesNotExist($this->tmp . '/coverage-xml');
+
+        $out = $merger->merge($fragDir, $this->tmp . '/coverage-xml', $junit);
+
+        self::assertDirectoryExists($this->tmp . '/coverage-xml');
+        self::assertFileExists($this->tmp . '/coverage-xml/index.xml');
+        self::assertFileExists($this->tmp . '/coverage-xml/' . basename(__FILE__) . '.xml');
+        self::assertSame(0, $out);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function writeFragment(): array
+    {
+        $fragDir = $this->tmp . '/fragments';
+
+        mkdir($fragDir, 0755, true);
+
         $filter = new Filter();
         $filter->includeFiles([__FILE__]);
 
         $driver = extension_loaded('pcov') ? new PcovDriver($filter) : new XdebugDriver($filter);
         $cc = new CodeCoverage($driver, $filter);
         // @phpstan-ignore-next-line
-        $cc->start('test::fixture', TestSizeResolver::small());
+        $cc->start(self::class . '::test_it_merges_fragments', TestSize::small());
         // @phpstan-ignore-next-line
-        $cc->stop(true, TestStatusResolver::success());
+        $cc->stop(true, TestStatus::success());
 
-        file_put_contents($dir . '/cc-fragment.phpser', serialize($cc));
+        file_put_contents($fragDir . '/cc-fragment.phpser', serialize($cc));
+
+        $junit = fixtureFilesPath('/plain-junit.xml');
+        $junitDist = str_replace('.xml', '.dist.xml', $junit);
+        $junitDistContent = file_get_contents($junitDist) ?: '';
+
+        file_put_contents(
+            $junit,
+            str_replace('%root%', dirname(__DIR__, 3), $junitDistContent)
+        );
+
+        return [$fragDir, $junit];
     }
 }

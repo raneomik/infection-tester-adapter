@@ -50,8 +50,13 @@ use Symfony\Component\Process\PhpExecutableFinder;
  *
  * @see \Raneomik\Tests\InfectionTestFramework\Tester\Command\CommandLineBuilderTest
  */
-final class CommandLineBuilder
+final readonly class CommandLineBuilder
 {
+    public function __construct(
+        private PhpExecutableFinder $phpFinder = new PhpExecutableFinder(),
+    ) {
+    }
+
     /**
      * Build command line for Tester.
      *
@@ -69,25 +74,12 @@ final class CommandLineBuilder
 
         if ([] !== $phpExtraArgs) {
             $command[] = '-p';
-            $command[] = $this->findPhp();
+            $command[] = $this->phpFinder->find()
+                ?: throw new RuntimeException('PHP executable not found');
         }
 
         // Merge all arguments
         return array_merge($command, $phpExtraArgs, $frameworkArgs);
-    }
-
-    /**
-     * Find PHP executable.
-     */
-    private function findPhp(): string
-    {
-        $phpExec = new PhpExecutableFinder()->find();
-
-        if (false === $phpExec) {
-            throw new RuntimeException('PHP executable not found');
-        }
-
-        return $phpExec;
     }
 
     /**
