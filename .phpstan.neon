@@ -7,3 +7,6 @@ parameters:
     tmpDir: var/phpstan-cache
     level: max
     inferPrivatePropertyTypeFromConstructor: true
+
+    excludePaths:
+        - src/Compatibility

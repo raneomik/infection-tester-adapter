@@ -48,6 +48,7 @@ use function is_dir;
 use function mkdir;
 use function random_bytes;
 use function random_int;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
 use function realpath;
@@ -57,7 +58,6 @@ use function register_shutdown_function;
 use function rtrim;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Filter;
-use SebastianBergmann\CodeCoverage\Test\TestStatus;
 use function serialize;
 use SplFileInfo;
 use function sprintf;
@@ -115,8 +115,7 @@ final class CoverageRuntime
             @mkdir($fragmentDir, 0777, true);
         }
 
-        $runtime = new self($fragmentDir, $srcDirs);
-        $runtime->cover();
+        (new self($fragmentDir, $srcDirs))->cover();
     }
 
     private function cover(): void
@@ -135,10 +134,10 @@ final class CoverageRuntime
 
         $codeCoverage = new CodeCoverage($driver, $filter);
 
-        $codeCoverage->start(
-            $this->coveringTestIdentifier->identifyTest(),
-            $this->coveringTestIdentifier->identifySize(),
-        );
+        $testId = $this->coveringTestIdentifier->identifyTest();
+        $testSize = $this->coveringTestIdentifier->identifySize();
+        // @phpstan-ignore-next-line
+        $codeCoverage->start($testId, $testSize);
 
         register_shutdown_function(function () use ($codeCoverage): void {
             $this->dumpCoverage($codeCoverage);
@@ -256,7 +255,8 @@ final class CoverageRuntime
     private function dumpCoverage(CodeCoverage $codeCoverage): void
     {
         try {
-            $codeCoverage->stop(true, TestStatus::Success);
+            // @phpstan-ignore-next-line
+            $codeCoverage->stop(true, TestStatus::success());
         } catch (Throwable) {
             // Ignore errors during stop
         }

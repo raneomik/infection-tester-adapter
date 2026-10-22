@@ -41,7 +41,7 @@ use function file_exists;
 use function file_get_contents;
 use function in_array;
 use function preg_match;
-use SebastianBergmann\CodeCoverage\Test\TestSize;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
 use function sprintf;
 use function str_contains;
 use function str_ends_with;
@@ -68,23 +68,23 @@ final class CoveringTestIdentifier
      * Delegates to AssertionsCounter (singleton + cache).
      * <= 3  → small / <= 10 → medium / > 10  → large
      */
-    public function identifySize(): TestSize
+    public function identifySize(): object
     {
         if ('' === $this->foundFilePath || '' === $this->foundMethodName) {
-            return TestSize::Unknown;
+            return TestSize::unknown();
         }
 
         $count = AssertionsCounter::getInstance()->countInMethod($this->foundFilePath, $this->foundMethodName);
 
         if (3 >= $count) {
-            return TestSize::Small;
+            return TestSize::small();
         }
 
         if (10 >= $count) {
-            return TestSize::Medium;
+            return TestSize::medium();
         }
 
-        return TestSize::Large;
+        return TestSize::large();
     }
 
     /**

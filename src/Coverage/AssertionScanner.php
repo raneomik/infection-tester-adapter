@@ -98,7 +98,7 @@ final class AssertionScanner
     {
         $tokens = token_get_all($content);
 
-        return new self($tokens, str_contains($content, 'HttpAssert'))->run();
+        return (new self($tokens, str_contains($content, 'HttpAssert')))->run();
     }
 
     /**
