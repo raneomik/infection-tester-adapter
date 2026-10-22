@@ -60,7 +60,7 @@ jobs:
 
             -   name: Install dependencies
                 env:
-                    COMPOSER_PREFER_LOWEST: ${{ 8.3 == matrix.php-version }}
+                    COMPOSER_PREFER_LOWEST: ${{ case(8.3 == matrix.php-version, 1, 0) }}
                 run: composer update --optimize-autoloader --no-interaction --no-progress --prefer-dist
 
             -  name: Enabling Xdebug
@@ -70,15 +70,28 @@ jobs:
             -   name: Run tests and generate coverage
                 run: make test-unit
 
-            -   name: Upload coverage results to Coveralls
-                if: ${{
-                        'xdebug' == matrix.coverage-driver 
-                        && '7.4.*' == matrix.symfony-require
-                        && '8.4' == matrix.php-version
+            -   name: Upload coverage to Coveralls
+                if: ${{ 
+                        '7.4.*' == matrix.symfony-require
+                        && (8.3 == matrix.php-version || 8.5 == matrix.php-version)
                     }}
-                env:
-                    COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-                run: vendor/bin/php-coveralls
+                uses: coverallsapp/github-action@v2
+                with:
+                    file: build/logs/clover.xml
+                    format: clover
+                    parallel: true
+                    flag-name: php-${{ matrix.php-version }}-${{ matrix.coverage-driver }}
+
+    coverage-done:
+        name: Coverage done
+        needs: tests
+        if: ${{ success() }}
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: coverallsapp/github-action@v2
+                with:
+                    github-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
+                    parallel-finished: true
 
     e2e:
         runs-on: ubuntu-latest

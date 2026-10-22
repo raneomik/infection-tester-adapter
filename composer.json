@@ -62,7 +62,6 @@
     "infection/infection": "^0.35.8",
     "nette/tester": "^2.6.2",
     "nikic/php-parser": "^5.8",
-    "php-coveralls/php-coveralls": "^2.9",
     "phpstan/extension-installer": "^1.4",
     "phpstan/phpstan": "^2.3",
     "phpstan/phpstan-phpunit": "^2.1",
