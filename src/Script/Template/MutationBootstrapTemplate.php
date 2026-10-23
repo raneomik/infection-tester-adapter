@@ -69,11 +69,12 @@ declare(strict_types=1);
 // Load project autoloader (includes IncludeInterceptor)
 require_once %s;
 
-// Delegate setup to MutationBootstrapSetup class
-\Raneomik\InfectionTestFramework\Tester\Script\MutationBootstrapSetup::run(
+// Set up before the test file loads its bootstrap, so files it includes are intercepted
+\Infection\StreamWrapper\IncludeInterceptor::intercept(
     %s,
     %s
 );
+\Infection\StreamWrapper\IncludeInterceptor::enable();
 
 PHP,
             var_export($autoloadPath, true),

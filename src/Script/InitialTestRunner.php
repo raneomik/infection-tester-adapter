@@ -36,17 +36,22 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Script;
 
+use function array_map;
 use function fwrite;
+use function glob;
 use Infection\TestFramework\PhpUnit\Adapter\PhpUnitAdapter;
 use const PHP_EOL;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
-use const STDERR;
+use const STDOUT;
 use Symfony\Component\Process\Process;
 use Throwable;
+use function unlink;
 
 /**
  * Executes the initial test run and merges coverage.
  * This class is instantiated from the generated wrapper script.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Script\InitialTestRunnerTest
  */
 final readonly class InitialTestRunner
 {
@@ -69,14 +74,16 @@ final readonly class InitialTestRunner
      */
     public function run(): int
     {
+        // fragments left by an interrupted run (other paths, other sources) would be merged into this one
+        $this->removeFragments();
+
         // Execute tests with coverage collection
         $exitCode = $this->executeTesterCommand();
 
         // Merge coverage fragments, normalize JUnit, and fix test identifiers
         // All the mapping is done here AFTER tests execution
-        $this->mergeCoverageFragments();
-
-        return $exitCode;
+        // without coverage Infection can't map mutants: fail the run rather than let it read a stale report
+        return $this->mergeCoverageFragments() ? $exitCode : 1;
     }
 
     /**
@@ -118,7 +125,7 @@ final readonly class InitialTestRunner
     /**
      * Merge coverage fragments and normalize JUnit XML.
      */
-    private function mergeCoverageFragments(): void
+    private function mergeCoverageFragments(): bool
     {
         try {
             $this->coverageMerger->merge(
@@ -126,9 +133,20 @@ final readonly class InitialTestRunner
                 $this->tmpDir . '/' . PhpUnitAdapter::COVERAGE_DIR,
                 $this->tmpJunitPath
             );
+            // merged into the coverage XML: Infection only cleans its tmp dir when mutation testing finishes
+            $this->removeFragments();
+
+            return true;
         } catch (Throwable $throwable) {
-            // Log error but don't fail (coverage mapping is non-critical)
-            fwrite(STDERR, PHP_EOL . '⚠️  Coverage test failed: ' . $throwable->getMessage() . PHP_EOL);
+            // not on STDERR: Infection stops the initial run on its first byte
+            fwrite(STDOUT, PHP_EOL . '⚠️  Coverage test failed: ' . $throwable->getMessage() . PHP_EOL);
+
+            return false;
         }
+    }
+
+    private function removeFragments(): void
+    {
+        array_map(unlink(...), glob($this->coverageFragmentDir . '/*.phpser') ?: []);
     }
 }

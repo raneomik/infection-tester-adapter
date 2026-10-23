@@ -112,7 +112,12 @@ final class TesterAdapter implements TestFrameworkAdapter
 
         return $this->commandLineBuilder->build(
             $this->testFrameworkExecutable,
-            frameworkArgs: $this->mutationConfigBuilder->buildMutantArguments($coverageTests, $bootstrapPath, $setupPath),
+            frameworkArgs: $this->mutationConfigBuilder->buildMutantArguments(
+                $coverageTests,
+                $bootstrapPath,
+                $setupPath,
+                $this->prepareArgumentsAndOptions($extraOptions),
+            ),
         );
     }
 

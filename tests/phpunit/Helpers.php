@@ -38,13 +38,32 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester;
 
 use const DIRECTORY_SEPARATOR;
 use function random_int;
+use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use function realpath;
+use RuntimeException;
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Filter;
 use function str_replace;
 use function strrpos;
 use function substr;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use function sys_get_temp_dir;
+
+/**
+ * @param list<string> $testFiles
+ */
+function codeCoverage(array $testFiles): CodeCoverage
+{
+    $provider = new CoverageDriverProvider();
+
+    $filter = new Filter();
+    $filter->includeFiles($testFiles);
+
+    $driver = $provider->coverageDriver($filter) ?: throw new RuntimeException('No coverage driver found');
+
+    return new CodeCoverage($driver, $filter);
+}
 
 function fixtureFilesPath(string $filepath): string
 {

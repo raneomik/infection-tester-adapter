@@ -36,14 +36,10 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Script;
 
-use function array_unique;
-use function array_values;
 use function bin2hex;
 use function file_put_contents;
-use FilesystemIterator;
 use function get_included_files;
 use function getmypid;
-use function implode;
 use function is_dir;
 use function mkdir;
 use function random_bytes;
@@ -51,51 +47,30 @@ use function random_int;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
-use function realpath;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use function register_shutdown_function;
 use function rtrim;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Filter;
 use function serialize;
-use SplFileInfo;
 use function sprintf;
-use function strtolower;
 use Throwable;
 
 /**
  * Runtime coverage collector for Nette Tester jobs.
  * Starts coverage at script start and dumps on shutdown.
- *
- * Priority: PCOV > PHPDBG > Xdebug (as per Tester philosophy)
  */
-final class CoverageRuntime
+final readonly class CoverageRuntime
 {
-    /**
-     * Cache for collected PHP files to avoid repeated filesystem scans.
-     *
-     * @var array<string, string[]>
-     */
-    private static array $phpFilesCache = [];
+    private CoveringTestIdentifier $coveringTestIdentifier;
+
+    private CoverageDriverProvider $coverageDriverProvider;
 
     /**
-     * Cache for configured filters to avoid repeated Filter creation and population.
-     *
-     * @var array<string, Filter>
-     */
-    private static array $filterCache = [];
-
-    private readonly CoveringTestIdentifier $coveringTestIdentifier;
-
-    private readonly CoverageDriverProvider $coverageDriverProvider;
-
-    /**
-     * @param string[] $srcDirs
+     * @param list<string> $srcFiles
      */
     private function __construct(
-        private readonly string $fragmentDir,
-        private readonly array $srcDirs,
+        private string $fragmentDir,
+        private array $srcFiles,
     ) {
         $this->coveringTestIdentifier = new CoveringTestIdentifier(get_included_files());
         $this->coverageDriverProvider = new CoverageDriverProvider();
@@ -103,11 +78,11 @@ final class CoverageRuntime
 
     /**
      * @param string $fragmentDir directory to write coverage fragments
-     * @param string[] $srcDirs absolute paths of source directories to include
+     * @param list<string> $srcFiles absolute paths of the source files to cover, listed once by PrependScriptGenerator
      */
-    public static function start(string $fragmentDir, array $srcDirs): void
+    public static function start(string $fragmentDir, array $srcFiles): void
     {
-        if ('' === $fragmentDir || [] === $srcDirs) {
+        if ('' === $fragmentDir || [] === $srcFiles) {
             return;
         }
 
@@ -115,16 +90,20 @@ final class CoverageRuntime
             @mkdir($fragmentDir, 0777, true);
         }
 
-        (new self($fragmentDir, $srcDirs))->cover();
+        (new self($fragmentDir, $srcFiles))->cover();
     }
 
     private function cover(): void
     {
-        $filter = $this->getOrCreateFilter();
+        $testId = $this->coveringTestIdentifier->identifyTest();
 
-        if (null === $filter) {
+        // an id missing from the JUnit report makes Infection abort ("test not found"): leave such tests uncovered
+        if (CoveringTestIdentifier::NOT_TO_COVER === $testId) {
             return;
         }
+
+        $filter = new Filter();
+        $filter->includeFiles($this->srcFiles);
 
         $driver = $this->coverageDriverProvider->coverageDriver($filter);
 
@@ -134,7 +113,6 @@ final class CoverageRuntime
 
         $codeCoverage = new CodeCoverage($driver, $filter);
 
-        $testId = $this->coveringTestIdentifier->identifyTest();
         $testSize = $this->coveringTestIdentifier->identifySize();
         // @phpstan-ignore-next-line
         $codeCoverage->start($testId, $testSize);
@@ -142,111 +120,6 @@ final class CoverageRuntime
         register_shutdown_function(function () use ($codeCoverage): void {
             $this->dumpCoverage($codeCoverage);
         });
-    }
-
-    /**
-     * Get or create a cached Filter for the given source directories.
-     */
-    private function getOrCreateFilter(): ?Filter
-    {
-        $cacheKey = implode('|', $this->srcDirs);
-
-        // Return cached filter if available
-        if (isset(self::$filterCache[$cacheKey])) {
-            return self::$filterCache[$cacheKey];
-        }
-
-        $filter = new Filter();
-        $files = $this->collectPhpFiles();
-
-        if ([] === $files) {
-            return null;
-        }
-
-        $this->addFilesToFilter($filter, $files);
-
-        // Cache the configured filter
-        self::$filterCache[$cacheKey] = $filter;
-
-        return $filter;
-    }
-
-    /**
-     * Collect all PHP files from the given source directories.
-     * Uses cache to avoid repeated filesystem scans.
-     *
-     * @return string[]
-     */
-    private function collectPhpFiles(): array
-    {
-        // Create cache key from sorted source directories
-        $cacheKey = implode('|', $this->srcDirs);
-
-        // Return cached result if available
-        if (isset(self::$phpFilesCache[$cacheKey])) {
-            return self::$phpFilesCache[$cacheKey];
-        }
-
-        $allFiles = [];
-
-        // Collect files from all directories (avoid array_merge in loop for performance)
-        foreach ($this->srcDirs as $srcDir) {
-            foreach ($this->scanDirectoryForPhpFiles($srcDir) as $file) {
-                $allFiles[] = $file;
-            }
-        }
-
-        // Remove duplicates if source directories overlap (rare case)
-        $result = array_values(array_unique($allFiles));
-
-        // Cache the result for subsequent tests
-        self::$phpFilesCache[$cacheKey] = $result;
-
-        return $result;
-    }
-
-    /**
-     * Scan a single directory recursively for PHP files.
-     *
-     * @return string[]
-     */
-    private function scanDirectoryForPhpFiles(string $dir): array
-    {
-        $dir = realpath(rtrim($dir, '/'));
-
-        if (false === $dir) {
-            return [];
-        }
-
-        $files = [];
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::LEAVES_ONLY
-        );
-
-        /** @var SplFileInfo $file */
-        foreach ($iterator as $file) {
-            if ($file->isFile()
-                && 'php' === strtolower($file->getExtension())
-                && false !== $realpath = $file->getRealPath()
-            ) {
-                $files[] = $realpath;
-            }
-        }
-
-        return $files;
-    }
-
-    /**
-     * Add files to the filter using the appropriate method.
-     *
-     * @param string[] $files
-     */
-    private function addFilesToFilter(Filter $filter, array $files): void
-    {
-        // Modern php-code-coverage versions support includeFiles for batch operations
-        // Convert to list to satisfy type requirements
-        $filter->includeFiles(array_values($files));
     }
 
     /**

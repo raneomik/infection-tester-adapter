@@ -36,11 +36,18 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
+use function array_unique;
+use function array_values;
 use function dirname;
+use FilesystemIterator;
 use function is_file;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\AutoPrependTemplate;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use function rtrim;
 use RuntimeException;
+use SplFileInfo;
+use function strtolower;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -118,9 +125,36 @@ final readonly class PrependScriptGenerator
         string $fragmentDir,
         array $srcDirs,
     ): void {
-        $content = AutoPrependTemplate::build($autoload, $fragmentDir, $srcDirs);
+        $content = AutoPrependTemplate::build($autoload, $fragmentDir, $this->listPhpFiles($srcDirs));
 
         $this->filesystem->dumpFile($scriptPath, $content);
         $this->filesystem->chmod($scriptPath, 0644);
+    }
+
+    /**
+     * Listed once here: every Tester job is a fresh PHP process, a scan there would run once per test file.
+     *
+     * @param string[] $srcDirs
+     *
+     * @return list<string>
+     */
+    private function listPhpFiles(array $srcDirs): array
+    {
+        $files = [];
+
+        foreach ($srcDirs as $srcDir) {
+            /** @var SplFileInfo $file */
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS)) as $file) {
+                if ($file->isFile()
+                    && 'php' === strtolower($file->getExtension())
+                    && false !== $realpath = $file->getRealPath()
+                ) {
+                    $files[] = $realpath;
+                }
+            }
+        }
+
+        // source directories may overlap
+        return array_values(array_unique($files));
     }
 }

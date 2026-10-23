@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Command;
 
 use function dirname;
+use const PHP_BINARY;
 use PHPUnit\Framework\Attributes\Group;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandScriptBuilder;
@@ -71,7 +72,7 @@ final class InitialTestRunCommandBuilderTest extends FileSystemTestCase
     public function test_it_builds_initial_script(): void
     {
         self::assertSame([
-            'php',
+            PHP_BINARY,
             $wrapper = $this->tmp . '/run-initial-tester.php',
         ], $this->initialTestRunCommandBuilder->build('testing-framework'));
 

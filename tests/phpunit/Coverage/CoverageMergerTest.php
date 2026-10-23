@@ -38,7 +38,6 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
 use function basename;
 use function dirname;
-use function extension_loaded;
 use function file_get_contents;
 use function file_put_contents;
 use function mkdir;
@@ -47,16 +46,12 @@ use PHPUnit\Framework\Attributes\TestWith;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
+use function Raneomik\Tests\InfectionTestFramework\Tester\codeCoverage;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 use RuntimeException;
-use SebastianBergmann\CodeCoverage\CodeCoverage;
-use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
-use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
-use SebastianBergmann\CodeCoverage\Filter;
 use function serialize;
 use function str_replace;
-use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 use Throwable;
 
 #[Group('unit')]
@@ -68,10 +63,10 @@ final class CoverageMergerTest extends FileSystemTestCase
         'dir' => '/Fixtures/Files/tester',
     ], 'RuntimeException')]
     #[TestWith([
-        'error' => DirectoryNotFoundException::class,
-        'message' => '/directory does not exist/',
+        'error' => RuntimeException::class,
+        'message' => '/No coverage fragments found/',
         'dir' => 'not-existing-dir',
-    ], 'DirectoryNotFoundException')]
+    ], 'missing directory')]
     public function test_it_outputs_error(
         string $error,
         string $message,
@@ -113,11 +108,7 @@ final class CoverageMergerTest extends FileSystemTestCase
 
         mkdir($fragDir, 0755, true);
 
-        $filter = new Filter();
-        $filter->includeFiles([__FILE__]);
-
-        $driver = extension_loaded('pcov') ? new PcovDriver($filter) : new XdebugDriver($filter);
-        $cc = new CodeCoverage($driver, $filter);
+        $cc = codeCoverage([__FILE__]);
         // @phpstan-ignore-next-line
         $cc->start(self::class . '::test_it_merges_fragments', TestSize::small());
         // @phpstan-ignore-next-line

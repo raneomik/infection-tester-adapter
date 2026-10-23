@@ -38,7 +38,9 @@ namespace Raneomik\InfectionTestFramework\Tester\Config;
 
 use function array_map;
 use function array_unique;
+use function array_values;
 use function dirname;
+use function in_array;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
 use function is_file;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\MutantSetupScriptTemplate;
@@ -50,15 +52,12 @@ use Symfony\Component\Filesystem\Filesystem;
  * Builder for mutant test execution configuration.
  * Encapsulates all logic for creating mutation bootstrap and configuration.
  */
-final class MutationConfigBuilder
+final readonly class MutationConfigBuilder
 {
-    /** @var array<string, string> */
-    private static array $cache = [];
-
     public function __construct(
-        private readonly string $tmpDir,
-        private readonly string $projectDir,
-        private readonly Filesystem $filesystem = new Filesystem(),
+        private string $tmpDir,
+        private string $projectDir,
+        private Filesystem $filesystem = new Filesystem(),
     ) {
     }
 
@@ -70,13 +69,13 @@ final class MutationConfigBuilder
         string $originalFilePath,
         string $mutatedFilePath,
     ): string {
-        $bootstrapPath = self::$cache['bootstrap-file-' . $mutationHash] ??= sprintf('%s/mutant/bootstrap-%s.php', $this->tmpDir, $mutationHash);
+        $bootstrapPath = sprintf('%s/mutant/bootstrap-%s.php', $this->tmpDir, $mutationHash);
 
         if (is_file($bootstrapPath)) {
             return $bootstrapPath;
         }
 
-        $bootstrapContent = self::$cache['bootstrap-' . $mutationHash] ??= MutationBootstrapTemplate::generate(
+        $bootstrapContent = MutationBootstrapTemplate::generate(
             $this->findAutoloadPath(),
             $originalFilePath,
             $mutatedFilePath,
@@ -92,7 +91,7 @@ final class MutationConfigBuilder
      */
     public function createMutantSetupScript(string $mutationHash): string
     {
-        $setupPath = self::$cache['setup-file-' . $mutationHash] ??= sprintf('%s/mutant/setup-%s.php', $this->tmpDir, $mutationHash);
+        $setupPath = sprintf('%s/mutant/setup-%s.php', $this->tmpDir, $mutationHash);
 
         if (is_file($setupPath)) {
             return $setupPath;
@@ -100,7 +99,7 @@ final class MutationConfigBuilder
 
         $this->filesystem->dumpFile(
             $setupPath,
-            self::$cache['setup'] ??= MutantSetupScriptTemplate::generate($this->findAutoloadPath()),
+            MutantSetupScriptTemplate::generate($this->findAutoloadPath()),
         );
 
         return $setupPath;
@@ -110,6 +109,7 @@ final class MutationConfigBuilder
      * Build Tester command-line arguments for mutant execution.
      *
      * @param TestLocation[] $coverageTests Tests that cover the mutated code
+     * @param string[] $baseArguments User's Tester options (--test-framework-options)
      *
      * @return string[]
      */
@@ -117,20 +117,47 @@ final class MutationConfigBuilder
         array $coverageTests,
         string $bootstrapPath,
         string $setupPath,
+        array $baseArguments = [],
     ): array {
-        // DON'T include $baseArguments!
-        // It may contain directory paths (tests/) or discovery options that force Tester
+        // Only the PHP options of $baseArguments: its directory paths (tests/) or discovery options force Tester
         // to scan all tests even when we pass specific files, causing 4× slowdown.
         // For mutants, we only want to run the exact tests that cover the mutated code.
+        // "--stop-on-fail": one failure kills the mutant: Infection's PHPUnit adapter does the same with "stopOnFailure"
         return [
+            ...self::phpOptions($baseArguments),
             '-d', sprintf('auto_prepend_file=%s', $bootstrapPath),
             '--setup', $setupPath,
             '-j', '1',
+            '--stop-on-fail',
             ...array_unique(array_map(
                 static fn (TestLocation $testLocation): string => $testLocation->getFilePath() ?? '',
                 $coverageTests
             )),
         ];
+    }
+
+    /**
+     * Tester runs PHP with -n (no php.ini) unless told otherwise: without these, mutant runs may miss extensions.
+     *
+     * @param string[] $arguments
+     *
+     * @return string[]
+     */
+    private static function phpOptions(array $arguments): array
+    {
+        $arguments = array_values($arguments);
+        $options = [];
+
+        foreach ($arguments as $i => $argument) {
+            if ('-C' === $argument) {
+                $options[] = $argument;
+            } elseif (in_array($argument, ['-c', '-d', '-p'], true) && isset($arguments[$i + 1])) {
+                $options[] = $argument;
+                $options[] = $arguments[$i + 1];
+            }
+        }
+
+        return $options;
     }
 
     private function findAutoloadPath(): string

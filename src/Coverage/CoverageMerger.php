@@ -37,16 +37,14 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
 use function file_get_contents;
+use function glob;
 use function is_file;
 use function is_string;
-use function Pipeline\take;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\XMLCoverageProcessor;
 use RuntimeException;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
-use SplFileInfo;
 use function sprintf;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Finder\Finder;
 use function unserialize;
 
 /**
@@ -56,12 +54,9 @@ use function unserialize;
  */
 final readonly class CoverageMerger
 {
-    private Finder $finder;
-
     public function __construct(
         private Filesystem $filesystem = new Filesystem(),
     ) {
-        $this->finder = Finder::create();
     }
 
     /**
@@ -122,14 +117,7 @@ final readonly class CoverageMerger
      */
     private function findFragmentFiles(string $fragmentDir): array
     {
-        return take(
-            $this->finder->files()
-                ->name('*.phpser')
-                ->in($fragmentDir)
-        )// @phpstan-ignore-next-line
-            ->map(static fn (SplFileInfo $file): string => $file->getPathname())
-            ->toList()
-        ;
+        return glob($fragmentDir . '/*.phpser') ?: [];
     }
 
     /**

@@ -219,6 +219,17 @@ final class CoveringTestIdentifierTest extends TestCase
         ];
     }
 
+    #[TestWith(["<?php\nnamespace App\\Tests;\n/** Checks the class Calculator */\nfinal readonly class FooTest {}\n", 'App\\Tests', 'FooTest'], 'comment & readonly')]
+    #[TestWith(["<?php\n\$a = new class extends Base {};\nabstract class FooTest { function f() { return Bar::class; } }\n", '', 'FooTest'], 'anonymous class & ::class')]
+    #[TestWith(["<?php\nnamespace App;\nAssert::true(true);\n", 'App', 'PlainTest'], 'no class: file name')]
+    public function test_it_resolves_class_as_junit_does(string $content, string $namespace, string $class): void
+    {
+        self::assertSame(
+            ['namespace' => $namespace, 'class' => $class],
+            CoveringTestIdentifier::classOf('/tests/PlainTest.php', $content),
+        );
+    }
+
     #[DataProvider('idCases')]
     public function test_it_gets_id(
         string $method,
