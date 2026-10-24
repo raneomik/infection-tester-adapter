@@ -40,8 +40,6 @@ use function file_get_contents;
 
 final class AssertionsCounter
 {
-    private static ?self $instance = null;
-
     /**
      * Cache : path => ['total' => int, 'methodName' => int, ...]
      *
@@ -49,33 +47,23 @@ final class AssertionsCounter
      */
     private static array $cache = [];
 
-    private function __construct()
-    {
-    }
-
-    public static function getInstance(): self
-    {
-        return self::$instance ??= new self();
-    }
-
     public static function reset(): void
     {
-        self::$instance = null;
         self::$cache = [];
     }
 
     /**
      * @return array<string, int>
      */
-    public function countAssertions(string $filePath, ?string $fileContent = null): array
+    public static function countAssertions(string $filePath, ?string $fileContent = null): array
     {
         return self::$cache[$filePath] ??= AssertionScanner::scan(
             $fileContent ?? (@file_get_contents($filePath) ?: ''),
         );
     }
 
-    public function countInMethod(string $filePath, string $methodName): int
+    public static function countInMethod(string $filePath, string $methodName): int
     {
-        return $this->countAssertions($filePath)[$methodName] ?? 0;
+        return self::countAssertions($filePath)[$methodName] ?? 0;
     }
 }

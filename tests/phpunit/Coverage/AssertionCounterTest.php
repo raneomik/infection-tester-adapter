@@ -47,10 +47,9 @@ final class AssertionCounterTest extends TestCase
     public function test_it_counts_asserts(): void
     {
         $testPath = fixtureFilesPath('/tester/tests/PlainTest.php');
-        $counter = AssertionsCounter::getInstance();
 
-        self::assertSame(['total' => 1], $counter->countAssertions($testPath));
-        self::assertSame(['total' => 1], $counter->countAssertions($testPath, ''), 'from cache');
+        self::assertSame(['total' => 1], AssertionsCounter::countAssertions($testPath));
+        self::assertSame(['total' => 1], AssertionsCounter::countAssertions($testPath, ''), 'from cache');
 
         $testPath = fixtureFilesPath('/tester/tests/TestCaseTest.php');
         self::assertSame([
@@ -59,35 +58,39 @@ final class AssertionCounterTest extends TestCase
             'testString' => 1,
             'testException' => 1,
             'total' => 7,
-        ], $counter->countAssertions($testPath));
-        self::assertSame(4, $counter->countInMethod($testPath, 'testTrueFalseSame'));
-        self::assertSame(1, $counter->countInMethod($testPath, 'testFail'));
+        ], AssertionsCounter::countAssertions($testPath));
+        self::assertSame(4, AssertionsCounter::countInMethod($testPath, 'testTrueFalseSame'));
+        self::assertSame(1, AssertionsCounter::countInMethod($testPath, 'testFail'));
 
         $testPath = fixtureFilesPath('/tester/tests/MiscLargeTest.php');
         self::assertSame([
             'testSomethingLarge' => 11,
             'total' => 11,
-        ], $counter->countAssertions($testPath));
-        self::assertSame(11, $counter->countInMethod($testPath, 'testSomethingLarge'));
-        self::assertSame(0, $counter->countInMethod($testPath, 'testFail'));
+        ], AssertionsCounter::countAssertions($testPath));
+        self::assertSame(11, AssertionsCounter::countInMethod($testPath, 'testSomethingLarge'));
+        self::assertSame(0, AssertionsCounter::countInMethod($testPath, 'testFail'));
     }
 
     public function test_it_counts_asserts_in_notfound_test(): void
     {
         $testPath = fixtureFilesPath('/tester/tests/NotFoundTest.php');
-        $counter = AssertionsCounter::getInstance();
-        self::assertSame(['total' => 0], $counter->countAssertions($testPath));
-        self::assertSame(['total' => 0], $counter->countAssertions($testPath, ''), 'from cache');
+        self::assertSame(['total' => 0], AssertionsCounter::countAssertions($testPath));
+        self::assertSame(['total' => 0], AssertionsCounter::countAssertions($testPath, ''), 'from cache');
 
         $testPath = fixtureFilesPath('/tester/tests/PlainTest.php');
-        self::assertSame(0, $counter->countInMethod($testPath, 'testNotHere'));
+        self::assertSame(0, AssertionsCounter::countInMethod($testPath, 'testNotHere'));
     }
 
-    public function test_it_resets_new_instance(): void
+    public function test_it_resets_cache(): void
     {
-        $counter = AssertionsCounter::getInstance();
-        self::assertSame($counter, AssertionsCounter::getInstance());
+        $testPath = fixtureFilesPath('/tester/tests/PlainTest.php');
+        AssertionsCounter::countAssertions($testPath);
+
         AssertionsCounter::reset();
-        self::assertNotSame($counter, AssertionsCounter::getInstance());
+
+        self::assertSame(['total' => 0], AssertionsCounter::countAssertions($testPath, ''), 'given content, not cache');
+
+        // the cache is static: don't leave the empty entry to other tests
+        AssertionsCounter::reset();
     }
 }

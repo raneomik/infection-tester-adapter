@@ -93,5 +93,6 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
         self::asserChmod('0644', $prependFile);
         self::assertFileContains('/vendor/autoload.php', $prependFile);
         self::assertFileContains('/Fixtures/Files/tester', $prependFile);
+        self::assertFileContains('/Fixtures/Files/tester/tests/PlainTest.php', $prependFile);
     }
 }

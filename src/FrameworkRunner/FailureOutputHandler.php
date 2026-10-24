@@ -37,7 +37,6 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\FrameworkRunner;
 
 use function file_get_contents;
-use function preg_match;
 use Raneomik\InfectionTestFramework\Tester\Coverage\AssertionsCounter;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
 use Tester\Runner\OutputHandler;
@@ -50,12 +49,9 @@ use Tester\Runner\Test;
  */
 final readonly class FailureOutputHandler implements OutputHandler
 {
-    private AssertionsCounter $assertCounter;
-
     public function __construct(
         private CoveringTestIdentifier $testIdentifier = new CoveringTestIdentifier(),
     ) {
-        $this->assertCounter = AssertionsCounter::getInstance();
     }
 
     public function begin(): void
@@ -77,19 +73,9 @@ final readonly class FailureOutputHandler implements OutputHandler
 
         $content = @file_get_contents($testFile) ?: '';
 
-        $namespace = '';
+        ['namespace' => $namespace, 'class' => $class] = CoveringTestIdentifier::classOf($testFile, $content);
 
-        if (1 === preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $nm)) {
-            $namespace = $nm[1];
-        }
-
-        $class = '';
-
-        if (1 === preg_match('/\bclass\s+([a-zA-Z_][a-zA-Z0-9_]*)/i', $content, $cm)) {
-            $class = $cm[1];
-        }
-
-        $assertCounts = $this->assertCounter->countAssertions($testFile, $content);
+        $assertCounts = AssertionsCounter::countAssertions($testFile, $content);
         $assertCountInTest = $assertCounts[$methodName] ?? $assertCounts['total'] ?? 0;
         echo "\n" . 'Tests: 1, Assertions: ' . $assertCountInTest . "\n";
 

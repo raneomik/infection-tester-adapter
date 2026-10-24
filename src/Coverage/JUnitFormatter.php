@@ -74,7 +74,6 @@ final class JUnitFormatter
     public function __construct(
         private readonly string $junitPath,
         private readonly string $outputPath,
-        private readonly AssertionsCounter $assertsCounter,
     ) {
         // Clear cache at the start of each format operation
         self::$classInfoCache = [];
@@ -92,7 +91,6 @@ final class JUnitFormatter
         $self = new self(
             $junitPath,
             $outputPath ?? $junitPath,
-            AssertionsCounter::getInstance(),
         );
 
         return $self->doFormat();
@@ -223,28 +221,12 @@ final class JUnitFormatter
             return self::$classInfoCache[$filePath] = $default;
         }
 
-        // Extract namespace
-        $namespace = '';
-
-        if (0 < preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $matches)) {
-            $namespace = $matches[1];
-        }
-
-        // Extract class name
-        $className = '';
-
-        if (0 < preg_match('/^\s*(?:final\s+)?(?:abstract\s+)?class\s+([a-zA-Z0-9_]+)/m', $content, $matches)) {
-            $className = $matches[1];
-        }
-
-        if ('' === $className) {
-            $className = pathinfo($filePath, PATHINFO_FILENAME);
-        }
+        ['namespace' => $namespace, 'class' => $className] = CoveringTestIdentifier::classOf($filePath, $content);
 
         return self::$classInfoCache[$filePath] = [
             'class' => $className,
             'namespace' => $namespace,
-            'assertions' => $this->assertsCounter->countAssertions($filePath, $content),
+            'assertions' => AssertionsCounter::countAssertions($filePath, $content),
         ];
     }
 

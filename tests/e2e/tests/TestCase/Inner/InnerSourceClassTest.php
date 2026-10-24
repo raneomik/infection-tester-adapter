@@ -17,6 +17,7 @@ class InnerSourceClassTest extends TestCase
     {
         $source = new InnerSourceClass();
         Assert::same(-1.23, $source->sub(1, 2.23));
+        Assert::true($source->isPositive(5));
     }
 }
 

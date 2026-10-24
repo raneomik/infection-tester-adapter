@@ -85,7 +85,7 @@ final readonly class TesterConfigLocator implements TestFrameworkConfigLocatorIn
                 return $bootstrapPath;
             }
 
-            $triedFiles[] = sprintf('%s.%s', $cliTool, $bootstrapPath);
+            $triedFiles[] = $bootstrapPath;
         }
 
         // For other frameworks, throw the original exception

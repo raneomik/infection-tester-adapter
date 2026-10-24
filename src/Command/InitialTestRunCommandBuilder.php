@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Command;
 
 use function array_merge;
+use const PHP_BINARY;
 use function sprintf;
 
 /**
@@ -84,6 +85,7 @@ final readonly class InitialTestRunCommandBuilder
             $frameworkArgs,
         );
 
-        return ['php', $wrapperPath];
+        // the PHP running Infection, not whichever "php" comes first in PATH
+        return [PHP_BINARY, $wrapperPath];
     }
 }

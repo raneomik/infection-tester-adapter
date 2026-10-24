@@ -45,7 +45,7 @@ use Tester\Helpers;
 
 /**
  * Detects which PHP coverage driver is available.
- * Priority: PCOV > PHPDBG > Xdebug (following Tester philosophy)
+ * Priority: PCOV > Xdebug
  *
  * @see \Raneomik\Tests\InfectionTestFramework\Tester\Coverage\CoverageDriverProviderTest
  */
@@ -59,7 +59,7 @@ final readonly class CoverageDriverProvider
     }
 
     /**
-     * Create a coverage driver with pcov > phpdbg > xdebug priority.
+     * Create a coverage driver with pcov > xdebug priority.
      */
     public function coverageDriver(Filter $filter): ?Driver
     {
@@ -92,7 +92,7 @@ final readonly class CoverageDriverProvider
      * Detect the available coverage driver.
      * Returns null if no driver is available.
      *
-     * @return 'pcov'|'phpdbg'|'xdebug'|null
+     * @return 'pcov'|'xdebug'|null
      */
     private function detect(): ?string
     {

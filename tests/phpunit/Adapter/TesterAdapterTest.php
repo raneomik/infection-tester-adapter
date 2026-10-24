@@ -184,8 +184,25 @@ final class TesterAdapterTest extends FileSystemTestCase
         self::assertStringContainsString('--setup ', $inlineCmd);
         self::assertStringContainsString('-d auto_prepend_file', $inlineCmd);
         self::assertStringContainsString('-j 1', $inlineCmd);
+        self::assertStringContainsString('--stop-on-fail', $inlineCmd);
         self::assertStringContainsString('/path/to/test', $inlineCmd);
         self::assertStringContainsString('/path/to/another-test', $inlineCmd);
+    }
+
+    public function test_mutant_cmd_line_keeps_php_options_only(): void
+    {
+        $cmd = $this->createAdapter()->getMutantCommandLine(
+            [new TestLocation('test', '/path/to/test', null)],
+            self::MUTATED_FILE_PATH,
+            self::MUTATION_HASH,
+            self::ORIGINAL_FILE_PATH,
+            'tests/ -C -d memory_limit=1G -c tests/php.ini -p php8.4 -j 8',
+        );
+
+        $inlineCmd = implode(' ', $cmd);
+        self::assertStringContainsString('-C -d memory_limit=1G -c tests/php.ini -p php8.4 ', $inlineCmd);
+        self::assertStringNotContainsString('tests/ ', $inlineCmd);
+        self::assertStringNotContainsString('-j 8', $inlineCmd);
     }
 
     public function test_it_has_junit_report(): void

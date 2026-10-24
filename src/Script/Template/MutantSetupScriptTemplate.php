@@ -60,10 +60,8 @@ declare(strict_types=1);
 require_once %s;
 
 if (isset($runner) && $runner instanceof \Tester\Runner\Runner) {
-    \Raneomik\InfectionTestFramework\Tester\Script\TesterMutantJobSetup::addHandler(
-        $runner,
-    );
-};
+    $runner->outputHandlers[] = new \Raneomik\InfectionTestFramework\Tester\FrameworkRunner\FailureOutputHandler();
+}
 PHP,
             var_export($autoloadPath, true),
         );

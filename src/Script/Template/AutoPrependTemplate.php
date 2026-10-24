@@ -36,7 +36,6 @@ declare(strict_types=1);
 
 namespace Raneomik\InfectionTestFramework\Tester\Script\Template;
 
-use function array_values;
 use function sprintf;
 use function var_export;
 
@@ -51,14 +50,14 @@ final class AutoPrependTemplate
      *
      * @param string $autoload Path to autoload file
      * @param string $fragmentDir Directory for coverage fragments
-     * @param string[] $srcDirs Source directories to cover
+     * @param list<string> $srcFiles Source files to cover
      *
      * @return string Complete PHP script content
      */
     public static function build(
         string $autoload,
         string $fragmentDir,
-        array $srcDirs,
+        array $srcFiles,
     ): string {
         return sprintf(<<<'PHP'
 <?php
@@ -81,7 +80,7 @@ require_once %s;
 PHP,
             var_export($autoload, true),
             var_export($fragmentDir, true),
-            var_export(array_values($srcDirs), true),
+            var_export($srcFiles, true),
         );
     }
 }

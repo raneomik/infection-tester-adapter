@@ -12,4 +12,5 @@ use Tester\Assert;
 test('Subtraction Test', function () {
     $source = new InnerSourceClass();
     Assert::same(-1.23, $source->sub(1, 2.23));
+    Assert::true($source->isPositive(5));
 });

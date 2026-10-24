@@ -46,6 +46,8 @@ This adapter works directly with your existing Tester tests, with some limitatio
 - Tester provides jUnit.xml and Clover.xml coverage reports, but Infection expects a more complete phpunit-like report. This adapter embeds transformation of Testers' reports & generation during the mutation process, so it is NOT recomended to use `--skip-initial-tests` with `--coverage` options (it just results in xpath read/FQCN error, unless you are using a script which does the needed trasformation).
 - [Test cases](https://tester.nette.org/en/testcase) are recommended for a better report result. But seem slower.
 - other forms of tests are supported, but need namespaces to be identified by Infection and referenced in report as covering code.
+- test files must be named `*Test.php`: `.phpt` files run, but don't count as covering code.
+- Tester runs PHP without php.ini (`-n`) by default: pass `-C`, `-c <php.ini>`, `-d <key=value>` or `-p <php>` in `--test-framework-options`, they are kept for mutant runs too (test paths are not, mutants only run their covering tests).
 - conflict with files may occur using `--debug` option and result in mutation coverge gen errors. Removing '<configured tmp dir|/tmp>/infection' should fix it.
 
 No additional configuration needed, "Convention over configuration" principle.

@@ -40,6 +40,8 @@ use function basename;
 use function file_exists;
 use function file_get_contents;
 use function in_array;
+use function pathinfo;
+use const PATHINFO_FILENAME;
 use function preg_match;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
 use function sprintf;
@@ -51,6 +53,8 @@ use function str_ends_with;
  */
 final class CoveringTestIdentifier
 {
+    public const string NOT_TO_COVER = 'not-to-cover';
+
     private string $foundFilePath = '';
 
     private string $foundMethodName = '';
@@ -65,7 +69,7 @@ final class CoveringTestIdentifier
 
     /**
      * Determine test size based on assertion count in the current test method.
-     * Delegates to AssertionsCounter (singleton + cache).
+     * Delegates to AssertionsCounter (cached per file).
      * <= 3  → small / <= 10 → medium / > 10  → large
      */
     public function identifySize(): object
@@ -74,7 +78,7 @@ final class CoveringTestIdentifier
             return TestSize::unknown();
         }
 
-        $count = AssertionsCounter::getInstance()->countInMethod($this->foundFilePath, $this->foundMethodName);
+        $count = AssertionsCounter::countInMethod($this->foundFilePath, $this->foundMethodName);
 
         if (3 >= $count) {
             return TestSize::small();
@@ -109,7 +113,24 @@ final class CoveringTestIdentifier
             }
         }
 
-        return 'not-to-cover';
+        return self::NOT_TO_COVER;
+    }
+
+    /**
+     * The one rule naming a test file's class: coverage and JUnit ids must agree, or Infection aborts with "test not found".
+     *
+     * @return array{namespace: string, class: string}
+     */
+    public static function classOf(string $filePath, string $content): array
+    {
+        $namespace = 1 === preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $matches) ? $matches[1] : '';
+
+        // line-anchored: skips "class Foo" in comments, "new class extends" and "Foo::class"
+        $class = 1 === preg_match('/^\s*(?:(?:final|abstract|readonly)\s+)*class\s+([a-zA-Z_][a-zA-Z0-9_]*)/m', $content, $matches)
+            ? $matches[1]
+            : pathinfo($filePath, PATHINFO_FILENAME);
+
+        return ['namespace' => $namespace, 'class' => $class];
     }
 
     /**
@@ -176,22 +197,12 @@ final class CoveringTestIdentifier
         }
 
         // cache-warmer for file
-        AssertionsCounter::getInstance()->countAssertions($filePath, $content);
+        AssertionsCounter::countAssertions($filePath, $content);
 
         // save for identifySize()
         $this->foundFilePath = $filePath;
 
-        $namespace = '';
-
-        if (0 < preg_match('/^\s*namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/m', $content, $matches)) {
-            $namespace = $matches[1];
-        }
-
-        $className = '';
-
-        if (0 < preg_match('/\bclass\s+([a-zA-Z_][a-zA-Z0-9_]*)/i', $content, $matches)) {
-            $className = $matches[1];
-        }
+        ['namespace' => $namespace, 'class' => $className] = self::classOf($filePath, $content);
 
         $methodName = $this->extractMethodFromArgv();
 
