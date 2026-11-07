@@ -36,9 +36,11 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Adapter;
 
+use Composer\InstalledVersions;
 use function dirname;
 use function implode;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
+use function ltrim;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
@@ -125,8 +127,10 @@ final class TesterAdapterTest extends FileSystemTestCase
     public function test_it_shows_version(): void
     {
         $testerAdapter = $this->createAdapter(null);
-        self::assertSame('2.6.2', $testerAdapter->getVersion());
-        self::assertSame('2.6.2', $testerAdapter->getVersion(), 'cached version');
+        // CI runs both lowest and latest deps, so compare against what is actually installed
+        $installed = ltrim((string) InstalledVersions::getPrettyVersion('nette/tester'), 'v');
+        self::assertSame($installed, $testerAdapter->getVersion());
+        self::assertSame($installed, $testerAdapter->getVersion(), 'cached version');
     }
 
     public function test_it_shows_recommendation(): void

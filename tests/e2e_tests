@@ -2,6 +2,8 @@
 
 cd tests/e2e
 
+rm -rf var tests/*/Covered/output
+
 failure="false"
 
 if [ -f error.log ]
@@ -40,5 +42,6 @@ if [ $failure = "true" ]; then
     exit 1
 fi
 
+rm -f error.log
 echo -e "\nSuccess"
 exit 0

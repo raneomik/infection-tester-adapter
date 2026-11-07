@@ -116,9 +116,8 @@ final class CoverageMergerTest extends FileSystemTestCase
 
         file_put_contents($fragDir . '/cc-fragment.phpser', serialize($cc));
 
-        $junit = fixtureFilesPath('/plain-junit.xml');
-        $junitDist = str_replace('.xml', '.dist.xml', $junit);
-        $junitDistContent = file_get_contents($junitDist) ?: '';
+        $junit = $this->tmp . '/plain-junit.xml';
+        $junitDistContent = file_get_contents(fixtureFilesPath('/plain-junit.dist.xml')) ?: '';
 
         file_put_contents(
             $junit,

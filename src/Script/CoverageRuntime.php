@@ -50,6 +50,7 @@ use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
 use function register_shutdown_function;
 use function rtrim;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Driver\Driver;
 use SebastianBergmann\CodeCoverage\Filter;
 use function serialize;
 use function sprintf;
@@ -107,7 +108,7 @@ final readonly class CoverageRuntime
 
         $driver = $this->coverageDriverProvider->coverageDriver($filter);
 
-        if (null === $driver) {
+        if (!$driver instanceof Driver) {
             return;
         }
 

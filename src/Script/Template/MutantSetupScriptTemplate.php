@@ -59,6 +59,9 @@ declare(strict_types=1);
 
 require_once %s;
 
+// The runner process dumps output-match failures (--EXPECT--, @outputMatch): keep them in Infection's tmpDir too
+\Tester\Dumper::$dumpDir = __DIR__ . '/output';
+
 if (isset($runner) && $runner instanceof \Tester\Runner\Runner) {
     $runner->outputHandlers[] = new \Raneomik\InfectionTestFramework\Tester\FrameworkRunner\FailureOutputHandler();
 }

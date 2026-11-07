@@ -23,7 +23,7 @@ class MiscLargeTest
         Assert::type(\stdClass::class, (object) ['test' => 'test']);
         HttpAssert::fetch('http://example.com/')->expectCode(200);
         Assert::exception(
-            fn() => throw new \RuntimeException('This test expects exception'),
+            fn(): never => throw new \RuntimeException('This test expects exception'),
             \RuntimeException::class,
         );
     }

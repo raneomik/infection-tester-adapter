@@ -29,7 +29,7 @@ class TestCaseTest
     public function testException(): void
     {
         Assert::exception(
-            fn() => throw new \RuntimeException('This test expects exception'),
+            fn(): never => throw new \RuntimeException('This test expects exception'),
             \RuntimeException::class,
         );
     }

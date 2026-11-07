@@ -60,6 +60,8 @@ final class JUnitFormatterTest extends TestCase
         parent::tearDownAfterClass();
 
         unlink(fixtureFilesPath('/tmp.xml'));
+        @unlink(fixtureFilesPath('/plain-junit.xml'));
+        @unlink(fixtureFilesPath('/testcase-junit.xml'));
     }
 
     public function test_it_formats_nothing(): void

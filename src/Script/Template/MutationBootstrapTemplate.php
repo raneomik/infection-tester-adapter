@@ -76,6 +76,9 @@ require_once %s;
 );
 \Infection\StreamWrapper\IncludeInterceptor::enable();
 
+// Keep Tester's failure dumps (.actual/.expected) in Infection's tmpDir instead of the user's tests/
+\Tester\Dumper::$dumpDir = __DIR__ . '/output';
+
 PHP,
             var_export($autoloadPath, true),
             var_export($originalFilePath, true),
