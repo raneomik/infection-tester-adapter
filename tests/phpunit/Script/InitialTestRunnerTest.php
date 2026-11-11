@@ -41,14 +41,12 @@ use function file_get_contents;
 use function file_put_contents;
 use function mkdir;
 use const PHP_BINARY;
+use const PHP_EOL;
 use PHPUnit\Framework\Attributes\Group;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Script\InitialTestRunner;
-use function Raneomik\Tests\InfectionTestFramework\Tester\codeCoverage;
+use function Raneomik\Tests\InfectionTestFramework\Tester\coverageFragment;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
-use function serialize;
 use function sprintf;
 use function str_replace;
 use function var_export;
@@ -61,6 +59,8 @@ final class InitialTestRunnerTest extends FileSystemTestCase
         mkdir($fragmentDir = $this->tmp . '/coverage-fragments');
         file_put_contents($stale = $fragmentDir . '/cc-1-stale.phpser', 'stale');
 
+        $this->expectOutputString(PHP_EOL . '⚠️  Coverage test failed: No coverage fragments found in "' . $fragmentDir . '".' . PHP_EOL);
+
         $exitCode = InitialTestRunner::execute([PHP_BINARY, '-r', 'exit(0);'], $fragmentDir, $this->tmp, $this->tmp . '/junit.xml');
 
         self::assertFileDoesNotExist($stale);
@@ -71,19 +71,20 @@ final class InitialTestRunnerTest extends FileSystemTestCase
     {
         mkdir($fragmentDir = $this->tmp . '/coverage-fragments');
 
-        $cc = codeCoverage([__FILE__]);
-        // @phpstan-ignore-next-line
-        $cc->start(self::class . '::test_it_removes_fragments_once_merged', TestSize::small());
-        // @phpstan-ignore-next-line
-        $cc->stop(true, TestStatus::success());
-        file_put_contents($valid = $this->tmp . '/valid.phpser', serialize($cc));
+        file_put_contents(
+            $valid = $this->tmp . '/valid.phpser',
+            coverageFragment(fixtureFilesPath('/tester/tests/PlainTest.php'), 5, 'PlainTest::test'),
+        );
 
         $junit = $this->tmp . '/plain-junit.xml';
         file_put_contents($junit, str_replace('%root%', dirname(__DIR__, 3), file_get_contents(fixtureFilesPath('/plain-junit.dist.xml')) ?: ''));
 
         // the "test run" writes its fragment, as Tester processes do
         $copy = sprintf('copy(%s, %s);', var_export($valid, true), var_export($fragmentDir . '/cc-1-run.phpser', true));
-        self::assertSame(0, InitialTestRunner::execute([PHP_BINARY, '-r', $copy], $fragmentDir, $this->tmp, $junit));
+        $copy .= ' echo "tests output"; exit(3);';
+        $this->expectOutputString('tests output');
+
+        self::assertSame(3, InitialTestRunner::execute([PHP_BINARY, '-r', $copy], $fragmentDir, $this->tmp, $junit), 'exit code of the tests');
 
         self::assertFileExists($this->tmp . '/coverage-xml/index.xml');
         self::assertFileDoesNotExist($fragmentDir . '/cc-1-run.phpser');

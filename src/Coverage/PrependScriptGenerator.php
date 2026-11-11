@@ -44,7 +44,6 @@ use function is_file;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\AutoPrependTemplate;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use function rtrim;
 use RuntimeException;
 use SplFileInfo;
 use function strtolower;
@@ -52,6 +51,8 @@ use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Generates coverage_prepend scripts for coverage collection.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Coverage\PrependScriptGeneratorTest
  */
 final readonly class PrependScriptGenerator
 {
@@ -68,7 +69,7 @@ final readonly class PrependScriptGenerator
      * @param string[] $srcDirs Absolute paths of source directories to cover
      * @param string $fragmentDir Directory where coverage fragments will be written
      *
-     * @return array{script: string, autoload: string|null}
+     * @return array{script: string, autoload: string}
      */
     public function generate(
         string $projectDir,
@@ -93,9 +94,9 @@ final readonly class PrependScriptGenerator
      */
     private function findAutoload(string $projectDir): string
     {
-        $dir = rtrim($projectDir, '/');
+        $dir = $projectDir;
 
-        while ('' !== $dir) {
+        while (true) {
             $candidate = $dir . '/vendor/autoload.php';
 
             if (is_file($candidate)) {
@@ -105,13 +106,11 @@ final readonly class PrependScriptGenerator
             $parent = dirname($dir);
 
             if ($parent === $dir) {
-                break;
+                throw new RuntimeException('Could not find Composer autoload.php');
             }
 
             $dir = $parent;
         }
-
-        throw new RuntimeException('Could not find Composer autoload.php');
     }
 
     /**

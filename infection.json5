@@ -3,6 +3,9 @@
         "directories": [
             "src"
         ],
+        "excludes": [
+            "Override"
+        ],
     },
     "logs": {
         "text": "var/infection.log",

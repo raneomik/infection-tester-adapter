@@ -44,6 +44,12 @@ use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 #[Group('unit')]
 final class AssertionCounterTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        // static cache: a hit would hide the scan from this test's coverage, and Infection would not pick the test
+        AssertionsCounter::reset();
+    }
+
     public function test_it_counts_asserts(): void
     {
         $testPath = fixtureFilesPath('/tester/tests/PlainTest.php');

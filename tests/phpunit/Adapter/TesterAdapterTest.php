@@ -36,13 +36,14 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Adapter;
 
+use function array_slice;
 use Composer\InstalledVersions;
 use function dirname;
-use function implode;
 use Infection\AbstractTestFramework\Coverage\TestLocation;
 use function ltrim;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\TestWith;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandLineBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\CommandScriptBuilder;
 use Raneomik\InfectionTestFramework\Tester\Command\InitialTestRunCommandBuilder;
@@ -105,6 +106,14 @@ final class TesterAdapterTest extends FileSystemTestCase
         yield ['errors!', false];
 
         yield ['unhandled string', false];
+
+        yield ['OK (5 tests) FAILURES!', false];
+
+        yield ['OK (5 tests) failures!', false];
+
+        yield ['OK (5 tests) ERRORS!', false];
+
+        yield ['OK (5 tests) errors!', false];
     }
 
     #[DataProvider('passProvider')]
@@ -183,30 +192,41 @@ final class TesterAdapterTest extends FileSystemTestCase
         self::assertFileContains(self::ORIGINAL_FILE_PATH, $expectedBootstrapPath);
         self::assertFileContains(self::MUTATED_FILE_PATH, $expectedBootstrapPath);
 
-        $inlineCmd = implode(' ', $cmd);
-        self::assertStringContainsString('vendor/bin/tester', $inlineCmd);
-        self::assertStringContainsString('--setup ', $inlineCmd);
-        self::assertStringContainsString('-d auto_prepend_file', $inlineCmd);
-        self::assertStringContainsString('-j 1', $inlineCmd);
-        self::assertStringContainsString('--stop-on-fail', $inlineCmd);
-        self::assertStringContainsString('/path/to/test', $inlineCmd);
-        self::assertStringContainsString('/path/to/another-test', $inlineCmd);
+        $expectedSetupPath = $this->tmp . sprintf('/mutant/setup-%s.php', self::MUTATION_HASH);
+        self::assertFileContains(dirname(__DIR__, 3) . '/vendor/autoload.php', $expectedSetupPath);
+
+        self::assertSame([
+            'vendor/bin/tester',
+            '-d', 'auto_prepend_file=' . $expectedBootstrapPath,
+            '--setup', $expectedSetupPath,
+            '-j', '1',
+            '--stop-on-fail',
+            '/path/to/test',
+            '/path/to/another-test',
+        ], $cmd);
     }
 
-    public function test_mutant_cmd_line_keeps_php_options_only(): void
+    /**
+     * @param list<string> $expectedPhpOptions
+     */
+    #[TestWith(['tests/ -C -d memory_limit=1G -c tests/php.ini -p php8.4 -j 8', ['-C', '-d', 'memory_limit=1G', '-c', 'tests/php.ini', '-p', 'php8.4']], 'every php option')]
+    #[TestWith(['-d  memory_limit=1G  tests/  -p php8.4', ['-d', 'memory_limit=1G', '-p', 'php8.4']], 'first, last & extra spaces')]
+    #[TestWith(['tests/ -j 8 -d', []], 'option without value')]
+    public function test_mutant_cmd_line_keeps_php_options_only(string $extraOptions, array $expectedPhpOptions): void
     {
         $cmd = $this->createAdapter()->getMutantCommandLine(
             [new TestLocation('test', '/path/to/test', null)],
             self::MUTATED_FILE_PATH,
             self::MUTATION_HASH,
             self::ORIGINAL_FILE_PATH,
-            'tests/ -C -d memory_limit=1G -c tests/php.ini -p php8.4 -j 8',
+            $extraOptions,
         );
 
-        $inlineCmd = implode(' ', $cmd);
-        self::assertStringContainsString('-C -d memory_limit=1G -c tests/php.ini -p php8.4 ', $inlineCmd);
-        self::assertStringNotContainsString('tests/ ', $inlineCmd);
-        self::assertStringNotContainsString('-j 8', $inlineCmd);
+        self::assertSame(
+            ['vendor/bin/tester', ...$expectedPhpOptions, '-d'],
+            array_slice($cmd, 0, -7),
+            'php options, then the mutant ones',
+        );
     }
 
     public function test_it_has_junit_report(): void

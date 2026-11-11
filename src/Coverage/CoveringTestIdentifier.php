@@ -37,7 +37,6 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 
 use function basename;
-use function file_exists;
 use function file_get_contents;
 use function in_array;
 use function pathinfo;
@@ -186,10 +185,6 @@ final class CoveringTestIdentifier
      */
     private function extractTestId(string $filePath): ?string
     {
-        if (!file_exists($filePath)) {
-            return null;
-        }
-
         $content = @file_get_contents($filePath);
 
         if (false === $content) {

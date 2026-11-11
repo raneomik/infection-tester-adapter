@@ -42,6 +42,7 @@ use function ob_start;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Raneomik\InfectionTestFramework\Tester\Coverage\AssertionsCounter;
 use Raneomik\InfectionTestFramework\Tester\FrameworkRunner\FailureOutputHandler;
 use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 use Tester\Runner\Test;
@@ -49,6 +50,12 @@ use Tester\Runner\Test;
 #[Group('unit')]
 final class FailureOutputHandlerTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        // static cache: a hit would hide the scan from this test's coverage, and Infection would not pick the test
+        AssertionsCounter::reset();
+    }
+
     /**
      * @return Iterator<array<string, (string | Test)>>
      */
@@ -91,6 +98,18 @@ final class FailureOutputHandlerTest extends TestCase
             
             Tests: 1, Assertions: 7
             App\Tester\Tests\TestCaseTest::testMethod
+            
+            
+            XX,
+        ];
+
+        yield [
+            'test' => (new Test(fixtureFilesPath('/tester/tests/TestCaseTest.php'), 'testTrueFalseSame'))
+                ->withResult(Test::Failed, 'it failed'),
+            'expected' => <<<XX
+            
+            Tests: 1, Assertions: 4
+            App\Tester\Tests\TestCaseTest::testTrueFalseSame
             
             
             XX,

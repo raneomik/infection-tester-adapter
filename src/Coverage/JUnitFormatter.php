@@ -40,7 +40,6 @@ use function count;
 use DOMDocument;
 use DOMElement;
 use function file_get_contents;
-use function is_file;
 use function number_format;
 use function pathinfo;
 use const PATHINFO_FILENAME;
@@ -107,12 +106,8 @@ final class JUnitFormatter
         }
 
         $domDocument = new DOMDocument();
-        $domDocument->preserveWhiteSpace = false;
-        $domDocument->formatOutput = true;
-
-        if (false === @$domDocument->loadXML($content)) {
-            return false;
-        }
+        // invalid XML leaves the document empty: no testcase, handled below
+        @$domDocument->loadXML($content);
 
         $testcases = $this->extractTestcases($domDocument);
 
@@ -170,15 +165,12 @@ final class JUnitFormatter
      */
     private function parseTesterFormat(string $attribute): ?array
     {
-        if (0 < preg_match('#^(.+\.php)\s+method=(\w+)$#', $attribute, $matches)) {
-            $filePath = $matches[1];
-            $method = $matches[2];
-        } elseif (0 < preg_match('#^(.+\.php)$#', $attribute, $matches)) {
-            $filePath = $matches[1];
-            $method = 'test';
-        } else {
+        if (1 !== preg_match('#^(.+\.php)(?:\s+method=(\w+))?$#', $attribute, $matches)) {
             return null;
         }
+
+        $filePath = $matches[1];
+        $method = $matches[2] ?? 'test';
 
         // Extract class and namespace from file
         $classInfo = $this->extractClassInfo($filePath);
@@ -211,10 +203,6 @@ final class JUnitFormatter
             'assertions' => ['total' => 0],
         ];
 
-        if (!is_file($filePath)) {
-            return self::$classInfoCache[$filePath] = $default;
-        }
-
         $content = @file_get_contents($filePath);
 
         if (false === $content) {
@@ -235,7 +223,7 @@ final class JUnitFormatter
      *
      * @param array<int, array{element: DOMElement, parsed: array{file: string, method: string, class: string, namespace: string, assertions: array<string, int>}}> $testcases
      *
-     * @return array<string, array{namespace: string, class: string, file: string, assertions: int, tests: array<int, array{element: DOMElement, method: string, assertions: int}>}>
+     * @return array<string, array{file: string, assertions: int, tests: array<int, array{element: DOMElement, method: string, assertions: int}>}>
      */
     private function groupTestcasesByClass(array $testcases): array
     {
@@ -248,8 +236,6 @@ final class JUnitFormatter
                 : $parsed['class'];
 
             $grouped[$fullClass] ??= [
-                'namespace' => $parsed['namespace'],
-                'class' => $parsed['class'],
                 'file' => $parsed['file'],
                 'assertions' => $parsed['assertions']['total'],
                 'tests' => [],
@@ -268,12 +254,11 @@ final class JUnitFormatter
     /**
      * Build PHPUnit-style hierarchical structure.
      *
-     * @param array<string, array{namespace: string, class: string, file: string, assertions: int, tests: array<int, array{element: DOMElement, method: string, assertions: int}>}> $groupedTestcases
+     * @param array<string, array{file: string, assertions: int, tests: array<int, array{element: DOMElement, method: string, assertions: int}>}> $groupedTestcases
      */
     private function buildPhpUnitStructure(array $groupedTestcases): DOMDocument
     {
         $domDocument = new DOMDocument('1.0', 'UTF-8');
-        $domDocument->preserveWhiteSpace = false;
         $domDocument->formatOutput = true;
 
         // Root testsuites element
@@ -284,47 +269,14 @@ final class JUnitFormatter
         $mainTestsuite = $domDocument->createElement('testsuite');
         $mainTestsuite->setAttribute('name', 'Nette Test Suite');
 
-        // Accumulate real statistics from testcases
+        $rootTestsuites->appendChild($mainTestsuite);
+
         $totalTests = 0;
         $totalAsserts = 0;
         $totalErrors = 0;
         $totalFailures = 0;
         $totalSkipped = 0;
         $totalTime = 0.0;
-
-        foreach ($groupedTestcases as $fullClass => $classData) {
-            $totalTests += count($classData['tests']);
-
-            // Count real errors/failures/skipped from testcases
-            foreach ($classData['tests'] as $test) {
-                $element = $test['element'];
-
-                // Check for errors/failures/skipped
-                if (0 < $element->getElementsByTagName('error')->length) {
-                    ++$totalErrors;
-                }
-
-                if (0 < $element->getElementsByTagName('failure')->length) {
-                    ++$totalFailures;
-                }
-
-                if (0 < $element->getElementsByTagName('skipped')->length) {
-                    ++$totalSkipped;
-                }
-            }
-
-            if (0 < ($asserts = $classData['assertions'])) {
-                $totalAsserts += $asserts;
-            }
-        }
-
-        $mainTestsuite->setAttribute('tests', (string) $totalTests);
-        $mainTestsuite->setAttribute('errors', (string) $totalErrors);
-        $mainTestsuite->setAttribute('failures', (string) $totalFailures);
-        $mainTestsuite->setAttribute('skipped', (string) $totalSkipped);
-        $mainTestsuite->setAttribute('assertions', (string) $totalAsserts);
-
-        $rootTestsuites->appendChild($mainTestsuite);
 
         // Create testsuite for each class
         foreach ($groupedTestcases as $fullClass => $classData) {
@@ -380,14 +332,11 @@ final class JUnitFormatter
                         $newChild = $domDocument->importNode($child, true);
                         $newTestcase->appendChild($newChild);
 
-                        // Count them
-                        if ('error' === $childType) {
-                            ++$classErrors;
-                        } elseif ('failure' === $childType) {
-                            ++$classFailures;
-                        } elseif ('skipped' === $childType) {
-                            ++$classSkipped;
-                        }
+                        match ($childType) {
+                            'error' => ++$classErrors,
+                            'failure' => ++$classFailures,
+                            'skipped' => ++$classSkipped,
+                        };
                     }
                 }
 
@@ -400,11 +349,21 @@ final class JUnitFormatter
             $classTestsuite->setAttribute('skipped', (string) $classSkipped);
             $classTestsuite->setAttribute('time', number_format($classTime, 6, '.', ''));
 
-            $totalTime += $classTime;
-
             $mainTestsuite->appendChild($classTestsuite);
+
+            $totalTests += $classTests;
+            $totalAsserts += $classData['assertions'];
+            $totalErrors += $classErrors;
+            $totalFailures += $classFailures;
+            $totalSkipped += $classSkipped;
+            $totalTime += $classTime;
         }
 
+        $mainTestsuite->setAttribute('tests', (string) $totalTests);
+        $mainTestsuite->setAttribute('errors', (string) $totalErrors);
+        $mainTestsuite->setAttribute('failures', (string) $totalFailures);
+        $mainTestsuite->setAttribute('skipped', (string) $totalSkipped);
+        $mainTestsuite->setAttribute('assertions', (string) $totalAsserts);
         $mainTestsuite->setAttribute('time', number_format($totalTime, 6, '.', ''));
 
         return $domDocument;

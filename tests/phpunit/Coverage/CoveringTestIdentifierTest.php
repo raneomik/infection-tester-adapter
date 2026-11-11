@@ -36,7 +36,6 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
-use function chmod;
 use Iterator;
 use function method_exists;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -44,29 +43,17 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
+use Raneomik\InfectionTestFramework\Tester\Coverage\AssertionsCounter;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoveringTestIdentifier;
 use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
-use function touch;
-use function unlink;
 
 #[Group('unit')]
 final class CoveringTestIdentifierTest extends TestCase
 {
-    private const string NotReadableTest = 'NotReadableTest.php';
-
-    public static function setUpBeforeClass(): void
+    protected function setUp(): void
     {
-        parent::setUpBeforeClass();
-
-        touch(self::NotReadableTest);
-        chmod(self::NotReadableTest, 0000);
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        unlink(self::NotReadableTest);
-
-        parent::tearDownAfterClass();
+        // static cache: a hit would hide the scan from this test's coverage, and Infection would not pick the test
+        AssertionsCounter::reset();
     }
 
     #[TestWith([
@@ -75,14 +62,23 @@ final class CoveringTestIdentifierTest extends TestCase
     #[TestWith([
         'file' => '/NotExistingTest.php',
     ], 'test not found to skip')]
-    #[TestWith([
-        'file' => self::NotReadableTest,
-    ], 'not readable test to skip')]
     public function test_it_doesnt_cover(string $file): void
     {
         $identifier = new CoveringTestIdentifier([$file]);
 
         self::assertSame('not-to-cover', $identifier->identifyTest());
+    }
+
+    public function test_it_looks_past_skipped_files(): void
+    {
+        $identifier = new CoveringTestIdentifier([
+            '/vendor/SomeTest.php',
+            '/NotExistingTest.php',
+            fixtureFilesPath('/tester/tests/bootstrap.php'),
+            fixtureFilesPath('/tester/tests/PlainTest.php'),
+        ]);
+
+        self::assertSame('PlainTest::test', $identifier->identifyTest());
     }
 
     /**
@@ -140,6 +136,34 @@ final class CoveringTestIdentifierTest extends TestCase
             'arg' => '--method=testTrueFalseSame',
             'file' => '/tester/tests/TestCaseTest.php',
             'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::testTrueFalseSame',
+            'expectedSize' => TestSize::medium(),
+        ];
+
+        yield 'method with garbage before' => [
+            'arg' => 'not--method=testString',
+            'file' => '/tester/tests/TestCaseTest.php',
+            'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::test',
+            'expectedSize' => TestSize::unknown(),
+        ];
+
+        yield 'method with garbage after' => [
+            'arg' => '--method=testString-not',
+            'file' => '/tester/tests/TestCaseTest.php',
+            'expectedId' => \App\Tester\Tests\TestCaseTest::class . '::test',
+            'expectedSize' => TestSize::unknown(),
+        ];
+
+        yield 'largest small testCase' => [
+            'arg' => '--method=testThree',
+            'file' => '/tester/tests/BoundaryTest.php',
+            'expectedId' => \App\Tester\Tests\BoundaryTest::class . '::testThree',
+            'expectedSize' => TestSize::small(),
+        ];
+
+        yield 'largest medium testCase' => [
+            'arg' => '--method=testTen',
+            'file' => '/tester/tests/BoundaryTest.php',
+            'expectedId' => \App\Tester\Tests\BoundaryTest::class . '::testTen',
             'expectedSize' => TestSize::medium(),
         ];
 
@@ -222,6 +246,7 @@ final class CoveringTestIdentifierTest extends TestCase
     #[TestWith(["<?php\nnamespace App\\Tests;\n/** Checks the class Calculator */\nfinal readonly class FooTest {}\n", 'App\\Tests', 'FooTest'], 'comment & readonly')]
     #[TestWith(["<?php\n\$a = new class extends Base {};\nabstract class FooTest { function f() { return Bar::class; } }\n", '', 'FooTest'], 'anonymous class & ::class')]
     #[TestWith(["<?php\nnamespace App;\nAssert::true(true);\n", 'App', 'PlainTest'], 'no class: file name')]
+    #[TestWith(["<?php\n// was in namespace Old;\nclass FooTest {}\n", '', 'FooTest'], 'namespace in comment')]
     public function test_it_resolves_class_as_junit_does(string $content, string $namespace, string $class): void
     {
         self::assertSame(

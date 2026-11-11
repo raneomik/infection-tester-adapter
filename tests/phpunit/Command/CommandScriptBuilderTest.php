@@ -55,8 +55,9 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
 
         $this->commandScriptBuilder = new CommandScriptBuilder(
             [
-                'tester/',
                 'not-existent',
+                '/tester/src/',
+                'tester/tests',
             ],
             $this->tmp,
             dirname(__DIR__) . '/Fixtures/Files',
@@ -83,7 +84,9 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
 
         self::assertSame($this->tmp . '/tester-setup.php', $setupScript = $this->commandScriptBuilder->buildInitSetupScript());
         self::assertFileExists($setupScript);
-        self::assertFileContains('/Fixtures/Files/tester', $setupScript);
+        self::assertFileContains('/Fixtures/Files/tester/src', $setupScript);
+        self::assertFileContains('/Fixtures/Files/tester/tests', $setupScript);
+        self::assertFileContains("'" . dirname(__DIR__, 3) . "/vendor/autoload.php'", $setupScript);
         self::asserChmod('0755', $setupScript);
 
         self::assertDirectoryExists($this->tmp . '/coverage-fragments');
@@ -91,7 +94,7 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
 
         self::assertFileExists($prependFile = $this->tmp . '/coverage_prepend.php');
         self::asserChmod('0644', $prependFile);
-        self::assertFileContains('/vendor/autoload.php', $prependFile);
+        self::assertFileContains("'" . dirname(__DIR__, 3) . "/vendor/autoload.php'", $prependFile);
         self::assertFileContains('/Fixtures/Files/tester', $prependFile);
         self::assertFileContains('/Fixtures/Files/tester/tests/PlainTest.php', $prependFile);
     }

@@ -39,7 +39,6 @@ namespace Raneomik\InfectionTestFramework\Tester\Coverage;
 use function file_get_contents;
 use function glob;
 use function is_file;
-use function is_string;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\XMLCoverageProcessor;
 use RuntimeException;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
@@ -81,7 +80,7 @@ final readonly class CoverageMerger
         $this->writeCoverageXml($merged, $outDir);
 
         // Step 3: Normalize JUnit and replace ::run with real test methods
-        if (is_string($junitPath) && is_file($junitPath)) {
+        if (null !== $junitPath && is_file($junitPath)) {
             JUnitFormatter::format($junitPath);
         }
 
@@ -140,13 +139,8 @@ final readonly class CoverageMerger
      */
     private function loadFragment(string $file): ?CodeCoverage
     {
-        $data = @file_get_contents($file);
-
-        if (false === $data) {
-            return null;
-        }
-
-        $cc = @unserialize($data, ['allowed_classes' => true]);
+        // unreadable file: an empty string, which is no coverage either
+        $cc = @unserialize((string) @file_get_contents($file));
 
         return $cc instanceof CodeCoverage ? $cc : null;
     }

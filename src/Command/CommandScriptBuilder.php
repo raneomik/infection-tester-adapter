@@ -40,10 +40,8 @@ use Raneomik\InfectionTestFramework\Tester\Coverage\PrependScriptGenerator;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\InitialTestRunTemplate;
 use Raneomik\InfectionTestFramework\Tester\Script\Template\InitSetupScriptTemplate;
 use function realpath;
-use function rtrim;
 use function sprintf;
 use Symfony\Component\Filesystem\Filesystem;
-use function trim;
 
 /**
  * Builder for initial test run command.
@@ -61,7 +59,7 @@ final class CommandScriptBuilder
     /**
      * @var array{
      *       script: string,
-     *       autoload: ?string
+     *       autoload: string
      *   }|null
      */
     private ?array $coverageScriptParts = null;
@@ -143,7 +141,7 @@ final class CommandScriptBuilder
     }
 
     /**
-     * @return array{script: string, autoload: string|null}
+     * @return array{script: string, autoload: string}
      */
     private function generatedCoverageScriptParts(): array
     {
@@ -157,9 +155,7 @@ final class CommandScriptBuilder
 
     private function getCoverageAutoloadPath(): string
     {
-        return $this->generatedCoverageScriptParts()['autoload']
-            ?? $this->projectDir . '/vendor/autoload.php'
-        ;
+        return $this->generatedCoverageScriptParts()['autoload'];
     }
 
     private function getCoverageScript(): string
@@ -179,8 +175,8 @@ final class CommandScriptBuilder
         $result = [];
 
         foreach ($srcDirs as $d) {
-            $candidate = sprintf('%s/%s', rtrim($this->projectDir, '/'), trim($d, '/'));
-            $resolved = realpath($candidate);
+            // realpath() collapses duplicate and trailing slashes
+            $resolved = realpath($this->projectDir . '/' . $d);
 
             if (false === $resolved) {
                 continue;

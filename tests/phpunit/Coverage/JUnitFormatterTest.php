@@ -36,216 +36,137 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
-use function count;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\TestCase;
-use function preg_match_all;
+use PHPUnit\Framework\Attributes\TestWith;
 use Raneomik\InfectionTestFramework\Tester\Coverage\JUnitFormatter;
+use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
-use stdClass;
 use function str_replace;
 use function substr_count;
-use function sys_get_temp_dir;
-use function tempnam;
-use function unlink;
 
 #[Group('unit')]
-final class JUnitFormatterTest extends TestCase
+final class JUnitFormatterTest extends FileSystemTestCase
 {
-    public static function tearDownAfterClass(): void
-    {
-        parent::tearDownAfterClass();
-
-        unlink(fixtureFilesPath('/tmp.xml'));
-        @unlink(fixtureFilesPath('/plain-junit.xml'));
-        @unlink(fixtureFilesPath('/testcase-junit.xml'));
-    }
-
     public function test_it_formats_nothing(): void
     {
-        $isOk = JUnitFormatter::format('nothing');
-        self::assertFalse($isOk);
+        self::assertFalse(JUnitFormatter::format('nothing'));
+        self::assertFalse(JUnitFormatter::format(fixtureFilesPath('/tester/src/.gitkeep')));
+    }
 
-        $isOk = JUnitFormatter::format(fixtureFilesPath('/src/.gitkeep'));
-        self::assertFalse($isOk);
+    #[TestWith(['<testsuites><testcase classname="incomplete'], 'invalid xml')]
+    #[TestWith(['<testsuites><testsuite><testcase name="testFoo" classname="SomeClass.SomeTest"/></testsuite></testsuites>'], 'not a Tester report')]
+    #[TestWith(['<testsuites><testcase classname="/path/T.php method=test-foo"/></testsuites>'], 'invalid method')]
+    #[TestWith(['<testsuites><testcase classname="/path/T.php method=foo bar"/></testsuites>'], 'trailing garbage after method')]
+    #[TestWith(['<testsuites><testcase classname="/path/T.php garbage"/></testsuites>'], 'trailing garbage after file')]
+    #[TestWith(['<testsuites><testcase classname="&#10;/path/T.php"/></testsuites>'], 'leading garbage')]
+    public function test_it_returns_false_without_tester_testcases(string $junit): void
+    {
+        file_put_contents($path = $this->tmp . '/junit.xml', $junit);
+
+        self::assertFalse(JUnitFormatter::format($path));
+        self::assertStringEqualsFile($path, $junit, 'left untouched');
+    }
+
+    public function test_it_formats_to_phpunit_structure(): void
+    {
+        $testCase = fixtureFilesPath('/tester/tests/TestCaseTest.php');
+        $plain = fixtureFilesPath('/tester/tests/PlainTest.php');
+
+        file_put_contents($path = $this->tmp . '/junit.xml', <<<XML
+            <?xml version="1.0"?>
+            <testsuites>
+              <testsuite>
+                <testcase classname="{$testCase} method=testFail" name="{$testCase} method=testFail" time="0.25" line="12">
+                  <failure message="f">failed &amp; <![CDATA[<kept>]]></failure>
+                </testcase>
+                <testcase classname="{$testCase} method=testTrueFalseSame" name="{$testCase} method=testTrueFalseSame" time="0.5"/>
+                <testcase classname="{$testCase} method=testString" name="{$testCase} method=testString"><error message="e"/></testcase>
+                <testcase classname="{$testCase} method=testException" name="{$testCase} method=testException"><skipped/></testcase>
+                <testcase classname="" name="{$plain}" time="1.5"><failure message="f1"/><failure message="f2"/></testcase>
+                <testcase classname="/missing/MissingTest.php method=testFoo" name="ignored"/>
+                <testcase classname="not a Tester test" name="neither"/>
+              </testsuite>
+            </testsuites>
+            XML);
+
+        // no output path: formats in place
+        self::assertTrue(JUnitFormatter::format($path));
+
+        self::assertStringEqualsFile($path, <<<XML
+            <?xml version="1.0" encoding="UTF-8"?>
+            <testsuites>
+              <testsuite name="Nette Test Suite" tests="6" errors="1" failures="3" skipped="1" assertions="8" time="2.253000">
+                <testsuite name="App\Tester\Tests\TestCaseTest" file="{$testCase}" assertions="7" tests="4" errors="1" failures="1" skipped="1" time="0.752000">
+                  <testcase name="testFail" file="{$testCase}" class="App\Tester\Tests\TestCaseTest" classname="App.Tester.Tests.TestCaseTest" assertions="1" time="0.25" line="12">
+                    <failure message="f">failed &amp; <![CDATA[<kept>]]></failure>
+                  </testcase>
+                  <testcase name="testTrueFalseSame" file="{$testCase}" class="App\Tester\Tests\TestCaseTest" classname="App.Tester.Tests.TestCaseTest" assertions="4" time="0.5"/>
+                  <testcase name="testString" file="{$testCase}" class="App\Tester\Tests\TestCaseTest" classname="App.Tester.Tests.TestCaseTest" assertions="1" time="0.001">
+                    <error message="e"/>
+                  </testcase>
+                  <testcase name="testException" file="{$testCase}" class="App\Tester\Tests\TestCaseTest" classname="App.Tester.Tests.TestCaseTest" assertions="1" time="0.001">
+                    <skipped/>
+                  </testcase>
+                </testsuite>
+                <testsuite name="PlainTest" file="{$plain}" assertions="1" tests="1" errors="0" failures="2" skipped="0" time="1.500000">
+                  <testcase name="test" file="{$plain}" class="PlainTest" classname="PlainTest" assertions="0" time="1.5">
+                    <failure message="f1"/>
+                    <failure message="f2"/>
+                  </testcase>
+                </testsuite>
+                <testsuite name="MissingTest" file="/missing/MissingTest.php" assertions="0" tests="1" errors="0" failures="0" skipped="0" time="0.001000">
+                  <testcase name="testFoo" file="/missing/MissingTest.php" class="MissingTest" classname="MissingTest" assertions="0" time="0.001"/>
+                </testsuite>
+              </testsuite>
+            </testsuites>
+
+            XML);
     }
 
     public function test_it_formats_plain_junit(): void
     {
-        $data = $this->prepareFiles('/plain-junit.xml');
+        [$junit, $output, $original] = $this->prepareFiles('/plain-junit.dist.xml');
 
-        $isOk = JUnitFormatter::format($data->original, $data->output);
-        $content = file_get_contents($data->output) ?: '';
+        self::assertTrue(JUnitFormatter::format($junit, $output));
+        self::assertStringEqualsFile($junit, $original, 'source left untouched');
 
-        self::assertTrue($isOk);
-        self::assertNotSame($data->originalContent, $content);
+        $content = (string) file_get_contents($output);
 
-        self::assertSame(
-            substr_count($content, '<testcase ') + 1,
-            substr_count($content, '<testsuite '),
-        );
-        self::assertNotSame(
-            substr_count($data->originalContent, '<testsuite '),
-            substr_count($content, '<testsuite '),
-        );
+        self::assertSame(5, substr_count($content, '<testcase '));
+        self::assertSame(5 + 1, substr_count($content, '<testsuite '), 'one suite per plain test file + the main one');
     }
 
     public function test_it_formats_testcase_junit(): void
     {
-        $data = $this->prepareFiles('/testcase-junit.xml');
+        [$junit, $output, $original] = $this->prepareFiles('/testcase-junit.dist.xml');
 
-        $isOk = JUnitFormatter::format($data->original, $data->output);
-        $content = file_get_contents($data->output) ?: '';
+        self::assertTrue(JUnitFormatter::format($junit, $output));
 
-        self::assertTrue($isOk);
-        self::assertNotSame($data->originalContent, $content);
-
-        preg_match_all('/\bmethod=()(.*?)\1/', $data->originalContent, $mMethods);
-        $methods = $mMethods[2];
-
-        preg_match_all('/<testcase\s+name=(")(.*?)\1/', $content, $mNames);
-        $names = $mNames[2];
+        $content = (string) file_get_contents($output);
 
         self::assertSame(
-            count($names),
-            count($methods) / 2,
-            'Tester has method name in "classname" & "name" -> Divided by 2'
+            substr_count($original, '<testcase '),
+            substr_count($content, '<testcase '),
         );
-    }
-
-    public function test_it_returns_false_on_invalid_xml(): void
-    {
-        $tmp = (string) tempnam(sys_get_temp_dir(), 'junit_test_');
-        file_put_contents($tmp, '<testsuites><testcase classname="incomplete');
-
-        try {
-            self::assertFalse(JUnitFormatter::format($tmp));
-        } finally {
-            unlink($tmp);
-        }
-    }
-
-    public function test_it_returns_false_when_no_tester_format_testcases(): void
-    {
-        $tmp = (string) tempnam(sys_get_temp_dir(), 'junit_test_');
-        file_put_contents($tmp, '<?xml version="1.0"?><testsuites><testsuite><testcase name="testFoo" classname="SomeClass.SomeTest"/></testsuite></testsuites>');
-
-        try {
-            self::assertFalse(JUnitFormatter::format($tmp));
-        } finally {
-            unlink($tmp);
-        }
-    }
-
-    public function test_it_uses_name_attribute_when_classname_is_empty(): void
-    {
-        $tmp = (string) tempnam(sys_get_temp_dir(), 'junit_test_');
-        $out = (string) tempnam(sys_get_temp_dir(), 'junit_out_');
-        file_put_contents($tmp, '<?xml version="1.0"?><testsuites><testsuite><testcase classname="" name="/path/to/SomeTest.php method=testFoo"/></testsuite></testsuites>');
-
-        try {
-            self::assertTrue(JUnitFormatter::format($tmp, $out));
-            self::assertStringContainsString('name="testFoo"', file_get_contents($out) ?: '');
-        } finally {
-            unlink($tmp);
-            unlink($out);
-        }
-    }
-
-    public function test_it_preserves_time_and_line_attributes(): void
-    {
-        $tmp = (string) tempnam(sys_get_temp_dir(), 'junit_test_');
-        $out = (string) tempnam(sys_get_temp_dir(), 'junit_out_');
-        file_put_contents($tmp, '<?xml version="1.0"?><testsuites><testsuite><testcase classname="/path/SomeTest.php method=testFoo" name="/path/SomeTest.php method=testFoo" time="0.123" line="42"/></testsuite></testsuites>');
-
-        try {
-            self::assertTrue(JUnitFormatter::format($tmp, $out));
-            $content = file_get_contents($out) ?: '';
-            self::assertStringContainsString('time="0.123"', $content);
-            self::assertStringContainsString('line="42"', $content);
-        } finally {
-            unlink($tmp);
-            unlink($out);
-        }
-    }
-
-    public function test_it_counts_and_propagates_failures_errors_and_skipped(): void
-    {
-        $tmp = (string) tempnam(sys_get_temp_dir(), 'junit_test_');
-        $out = (string) tempnam(sys_get_temp_dir(), 'junit_out_');
-        file_put_contents($tmp,
-            '<?xml version="1.0"?><testsuites><testsuite>'
-            . '<testcase classname="/path/T.php method=testA" name="/path/T.php method=testA"><failure message="f">msg</failure></testcase>'
-            . '<testcase classname="/path/T.php method=testB" name="/path/T.php method=testB"><error message="e">msg</error></testcase>'
-            . '<testcase classname="/path/T.php method=testC" name="/path/T.php method=testC"><skipped/></testcase>'
-            . '</testsuite></testsuites>'
+        self::assertSame(
+            substr_count($original, ' method=') / 2,
+            substr_count($content, '<testcase name="test'),
+            'Tester has method name in "classname" & "name" -> Divided by 2',
         );
-
-        try {
-            self::assertTrue(JUnitFormatter::format($tmp, $out));
-            $content = file_get_contents($out) ?: '';
-            self::assertStringContainsString('<failure', $content);
-            self::assertStringContainsString('<error', $content);
-            self::assertStringContainsString('<skipped', $content);
-            self::assertMatchesRegularExpression('/failures="1"/', $content);
-            self::assertMatchesRegularExpression('/errors="1"/', $content);
-            self::assertMatchesRegularExpression('/skipped="1"/', $content);
-        } finally {
-            unlink($tmp);
-            unlink($out);
-        }
-    }
-
-    public function test_it_extracts_class_and_namespace_from_readable_file(): void
-    {
-        $phpFile = sys_get_temp_dir() . '/JUnitFormatterTestClass.php';
-        file_put_contents($phpFile, "<?php\nnamespace My\\Custom\\NS;\nfinal class MyTestClass {}\n");
-        $tmp = (string) tempnam(sys_get_temp_dir(), 'junit_test_');
-        $out = (string) tempnam(sys_get_temp_dir(), 'junit_out_');
-        file_put_contents($tmp,
-            '<?xml version="1.0"?><testsuites><testsuite>'
-            . '<testcase classname="' . $phpFile . ' method=testFoo" name="' . $phpFile . ' method=testFoo"/>'
-            . '</testsuite></testsuites>'
-        );
-
-        try {
-            self::assertTrue(JUnitFormatter::format($tmp, $out));
-            $content = file_get_contents($out) ?: '';
-            self::assertStringContainsString('My\Custom\NS', $content);
-            self::assertStringContainsString('MyTestClass', $content);
-        } finally {
-            unlink($phpFile);
-            unlink($tmp);
-            unlink($out);
-        }
     }
 
     /**
-     * @return stdClass&object{
-     *     original: string,
-     *     output: string,
-     *     originalContent: string,
-     * }
+     * @return array{string, string, string} junit path, output path, junit content
      */
-    private function prepareFiles(string $testJunitPath): stdClass
+    private function prepareFiles(string $distJunit): array
     {
-        $original = fixtureFilesPath($testJunitPath);
+        $content = str_replace('%root%', dirname(__DIR__, 3), (string) file_get_contents(fixtureFilesPath($distJunit)));
 
-        $originalDist = str_replace('.xml', '.dist.xml', $original);
-        $originalContent = file_get_contents($originalDist) ?: '';
+        file_put_contents($junit = $this->tmp . '/junit.xml', $content);
 
-        file_put_contents(
-            $original,
-            str_replace('%root%', dirname(__DIR__, 3), $originalContent)
-        );
-
-        return (object) [
-            'original' => $original,
-            'output' => fixtureFilesPath('/tmp.xml'),
-            'originalContent' => $originalContent,
-        ];
+        return [$junit, $this->tmp . '/formatted.xml', $content];
     }
 }

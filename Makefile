@@ -28,9 +28,10 @@ PHPSTAN_ARGS=analyse src tests/phpunit -c .phpstan.neon
 # Infection
 INFECTION=./.tools/infection.phar
 INFECTION_URL="https://github.com/infection/infection/releases/download/$(shell cat ./.tools/infection-version)/infection.phar"
-MIN_MSI=71 #80
-MIN_COVERED_MSI=71 #82
-INFECTION_ARGS=--min-msi=$(MIN_MSI) --min-covered-msi=$(MIN_COVERED_MSI) --threads=max --no-interaction --show-mutations=0
+MIN_MSI=88
+MIN_COVERED_MSI=95
+# --with-uncovered: Infection skips uncovered code otherwise, and MSI would only be the covered one
+INFECTION_ARGS=--min-msi=$(MIN_MSI) --min-covered-msi=$(MIN_COVERED_MSI) --with-uncovered --threads=max --no-interaction --show-mutations=0
 
 .PHONY: all
 all:		## Executes all checks
@@ -51,7 +52,7 @@ composer-validate: vendor/autoload.php
 
 .PHONY: rector
 rector:		## Executes rector
-	@$(RECTOR)
+	@$(RECTOR) -c .rector.php
 
 .PHONY: cs-lint
 cs-lint:	## Run CS checks

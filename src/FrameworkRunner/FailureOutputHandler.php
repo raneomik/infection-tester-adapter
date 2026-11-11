@@ -76,7 +76,7 @@ final readonly class FailureOutputHandler implements OutputHandler
         ['namespace' => $namespace, 'class' => $class] = CoveringTestIdentifier::classOf($testFile, $content);
 
         $assertCounts = AssertionsCounter::countAssertions($testFile, $content);
-        $assertCountInTest = $assertCounts[$methodName] ?? $assertCounts['total'] ?? 0;
+        $assertCountInTest = $assertCounts[$methodName] ?? $assertCounts['total'];
         echo "\n" . 'Tests: 1, Assertions: ' . $assertCountInTest . "\n";
 
         echo $this->testIdentifier->getTestId(

@@ -36,17 +36,14 @@ declare(strict_types=1);
 
 namespace Raneomik\Tests\InfectionTestFramework\Tester\Coverage;
 
-use function basename;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
 use function mkdir;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\TestWith;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestSize;
-use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
-use function Raneomik\Tests\InfectionTestFramework\Tester\codeCoverage;
+use function Raneomik\Tests\InfectionTestFramework\Tester\coverageFragment;
 use Raneomik\Tests\InfectionTestFramework\Tester\FileSystem\FileSystemTestCase;
 use function Raneomik\Tests\InfectionTestFramework\Tester\fixtureFilesPath;
 use RuntimeException;
@@ -95,8 +92,19 @@ final class CoverageMergerTest extends FileSystemTestCase
 
         self::assertDirectoryExists($this->tmp . '/coverage-xml');
         self::assertFileExists($this->tmp . '/coverage-xml/index.xml');
-        self::assertFileExists($this->tmp . '/coverage-xml/' . basename(__FILE__) . '.xml');
+        self::assertFileExists($this->tmp . '/coverage-xml/PlainTest.php.xml');
+        self::assertFileExists($this->tmp . '/coverage-xml/TestCaseTest.php.xml', 'every fragment is merged');
         self::assertSame(0, $out);
+        self::assertStringContainsString('Nette Test Suite', (string) file_get_contents($junit), 'JUnit report is formatted');
+    }
+
+    public function test_it_merges_without_junit_report(): void
+    {
+        [$fragDir] = $this->writeFragment();
+
+        self::assertSame(0, (new CoverageMerger())->merge($fragDir, $this->tmp . '/coverage-xml', $this->tmp . '/missing-junit.xml'));
+        self::assertSame(0, (new CoverageMerger())->merge($fragDir, $this->tmp . '/coverage-xml'));
+        self::assertFileDoesNotExist($this->tmp . '/missing-junit.xml');
     }
 
     /**
@@ -108,13 +116,17 @@ final class CoverageMergerTest extends FileSystemTestCase
 
         mkdir($fragDir, 0755, true);
 
-        $cc = codeCoverage([__FILE__]);
-        // @phpstan-ignore-next-line
-        $cc->start(self::class . '::test_it_merges_fragments', TestSize::small());
-        // @phpstan-ignore-next-line
-        $cc->stop(true, TestStatus::success());
+        file_put_contents(
+            $fragDir . '/cc-fragment.phpser',
+            coverageFragment(fixtureFilesPath('/tester/tests/PlainTest.php'), 5, 'PlainTest::test'),
+        );
 
-        file_put_contents($fragDir . '/cc-fragment.phpser', serialize($cc));
+        file_put_contents(
+            $fragDir . '/cc-other-fragment.phpser',
+            coverageFragment(fixtureFilesPath('/tester/tests/TestCaseTest.php'), 14, \App\Tester\Tests\TestCaseTest::class . '::testFail'),
+        );
+        file_put_contents($fragDir . '/cc-corrupted.phpser', 'not a fragment');
+        file_put_contents($fragDir . '/cc-not-coverage.phpser', serialize(['not' => 'coverage']));
 
         $junit = $this->tmp . '/plain-junit.xml';
         $junitDistContent = file_get_contents(fixtureFilesPath('/plain-junit.dist.xml')) ?: '';

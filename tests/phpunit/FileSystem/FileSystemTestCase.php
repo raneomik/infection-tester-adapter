@@ -39,15 +39,13 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester\FileSystem;
 use function file_get_contents;
 use function fileperms;
 use PHPUnit\Framework\TestCase;
+use Raneomik\InfectionTestFramework\Tester\Coverage\AssertionsCounter;
 use function Raneomik\Tests\InfectionTestFramework\Tester\make_tmp_dir;
-use function Raneomik\Tests\InfectionTestFramework\Tester\normalizePath;
 use function Safe\getcwd;
-use function Safe\realpath;
 use function sprintf;
 use function substr;
 use function substr_count;
 use Symfony\Component\Filesystem\Filesystem;
-use function sys_get_temp_dir;
 
 abstract class FileSystemTestCase extends TestCase
 {
@@ -60,18 +58,10 @@ abstract class FileSystemTestCase extends TestCase
     /** @var array<string, string> */
     private static array $fileContentCache = [];
 
-    public static function tearDownAfterClass(): void
-    {
-        // Cleans up whatever was there before. Indeed upon failure PHPUnit fails to trigger the
-        // `tearDown()` method and as a result some temporary files may still remain.
-        self::removeTmpDir();
-    }
-
     protected function setUp(): void
     {
-        // Cleans up whatever was there before. Indeed upon failure PHPUnit fails to trigger the
-        // `tearDown()` method and as a result some temporary files may still remain.
-        self::removeTmpDir();
+        // static cache: a hit would hide the scan from this test's coverage, and Infection would not pick the test
+        AssertionsCounter::reset();
 
         $this->cwd = getcwd();
         $this->tmp = make_tmp_dir(self::TMP_DIR_NAME, self::class);
@@ -97,14 +87,5 @@ abstract class FileSystemTestCase extends TestCase
     {
         $content = self::$fileContentCache[$filepath] ??= (string) @file_get_contents($filepath);
         self::assertSame($count, substr_count($content, $expectedString));
-    }
-
-    final protected static function removeTmpDir(): void
-    {
-        (new Filesystem())->remove(
-            normalizePath(
-                realpath(sys_get_temp_dir()) . '/' . self::TMP_DIR_NAME,
-            ),
-        );
     }
 }

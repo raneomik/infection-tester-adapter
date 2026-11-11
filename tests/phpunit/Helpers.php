@@ -38,11 +38,14 @@ namespace Raneomik\Tests\InfectionTestFramework\Tester;
 
 use const DIRECTORY_SEPARATOR;
 use function random_int;
+use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
 use function realpath;
 use RuntimeException;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Data\RawCodeCoverageData;
 use SebastianBergmann\CodeCoverage\Filter;
+use function serialize;
 use function str_replace;
 use function strrpos;
 use function substr;
@@ -51,18 +54,22 @@ use Symfony\Component\Filesystem\Filesystem;
 use function sys_get_temp_dir;
 
 /**
- * @param list<string> $testFiles
+ * A serialized coverage fragment, as Tester jobs dump them.
+ * Built from raw data: starting a real driver here would stop and clear PHPUnit's own collection,
+ * hiding everything the calling test covers.
  */
-function codeCoverage(array $testFiles): CodeCoverage
+function coverageFragment(string $coveredFile, int $line, string $testId): string
 {
-    $provider = new CoverageDriverProvider();
-
     $filter = new Filter();
-    $filter->includeFiles($testFiles);
+    $filter->includeFiles([$coveredFile]);
 
-    $driver = $provider->coverageDriver($filter) ?: throw new RuntimeException('No coverage driver found');
+    $driver = (new CoverageDriverProvider())->coverageDriver($filter) ?: throw new RuntimeException('No coverage driver found');
 
-    return new CodeCoverage($driver, $filter);
+    $codeCoverage = new CodeCoverage($driver, $filter);
+    // @phpstan-ignore-next-line
+    $codeCoverage->append(RawCodeCoverageData::fromXdebugWithoutPathCoverage([$coveredFile => [$line => 1]]), $testId, true, TestStatus::success());
+
+    return serialize($codeCoverage);
 }
 
 function fixtureFilesPath(string $filepath): string

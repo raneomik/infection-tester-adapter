@@ -4,6 +4,8 @@
 	bootstrap="./vendor/autoload.php"
 	colors="true"
 	cacheResult="false"
+	failOnWarning="true"
+	failOnNotice="true"
 >
 	<source>
 		<include>

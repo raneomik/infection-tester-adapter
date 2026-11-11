@@ -37,12 +37,10 @@ declare(strict_types=1);
 namespace Raneomik\InfectionTestFramework\Tester\Script;
 
 use function array_map;
-use function fwrite;
 use function glob;
 use Infection\TestFramework\PhpUnit\Adapter\PhpUnitAdapter;
 use const PHP_EOL;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageMerger;
-use const STDOUT;
 use Symfony\Component\Process\Process;
 use Throwable;
 use function unlink;
@@ -139,7 +137,7 @@ final readonly class InitialTestRunner
             return true;
         } catch (Throwable $throwable) {
             // not on STDERR: Infection stops the initial run on its first byte
-            fwrite(STDOUT, PHP_EOL . '⚠️  Coverage test failed: ' . $throwable->getMessage() . PHP_EOL);
+            echo PHP_EOL . '⚠️  Coverage test failed: ' . $throwable->getMessage() . PHP_EOL;
 
             return false;
         }
