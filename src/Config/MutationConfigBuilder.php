@@ -51,6 +51,8 @@ use Symfony\Component\Filesystem\Filesystem;
 /**
  * Builder for mutant test execution configuration.
  * Encapsulates all logic for creating mutation bootstrap and configuration.
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Config\MutationConfigBuilderTest
  */
 final readonly class MutationConfigBuilder
 {

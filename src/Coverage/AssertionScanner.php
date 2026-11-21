@@ -58,6 +58,8 @@ use function token_get_all;
  * "*Assert" occurrences scanner in file and method using php tokens
  *
  * @internal
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Coverage\AssertionScannerTest
  */
 final class AssertionScanner
 {

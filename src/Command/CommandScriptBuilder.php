@@ -176,7 +176,7 @@ final class CommandScriptBuilder
 
         foreach ($srcDirs as $d) {
             // realpath() collapses duplicate and trailing slashes
-            $resolved = realpath($this->projectDir . '/' . $d);
+            $resolved = realpath($this->projectDir . '/' . $d) ?: realpath($d);
 
             if (false === $resolved) {
                 continue;

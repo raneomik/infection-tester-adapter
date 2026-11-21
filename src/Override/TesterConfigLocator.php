@@ -45,6 +45,8 @@ use function sprintf;
 
 /**
  * @internal
+ *
+ * @see \Raneomik\Tests\InfectionTestFramework\Tester\Override\TesterConfigLocatorTest
  */
 final readonly class TesterConfigLocator implements TestFrameworkConfigLocatorInterface
 {

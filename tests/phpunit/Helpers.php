@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace Raneomik\Tests\InfectionTestFramework\Tester;
 
 use const DIRECTORY_SEPARATOR;
+use function method_exists;
 use function random_int;
 use Raneomik\InfectionTestFramework\Tester\Compatibility\TestStatus;
 use Raneomik\InfectionTestFramework\Tester\Coverage\CoverageDriverProvider;
@@ -66,8 +67,14 @@ function coverageFragment(string $coveredFile, int $line, string $testId): strin
     $driver = (new CoverageDriverProvider())->coverageDriver($filter) ?: throw new RuntimeException('No coverage driver found');
 
     $codeCoverage = new CodeCoverage($driver, $filter);
+
     // @phpstan-ignore-next-line
-    $codeCoverage->append(RawCodeCoverageData::fromXdebugWithoutPathCoverage([$coveredFile => [$line => 1]]), $testId, true, TestStatus::success());
+    $rawData = method_exists(RawCodeCoverageData::class, 'fromLineCoverage')
+        ? RawCodeCoverageData::fromLineCoverage([$coveredFile => [$line => 1]])
+        // @phpstan-ignore-next-line
+        : RawCodeCoverageData::fromXdebugWithoutPathCoverage([$coveredFile => [$line => 1]]);
+    // @phpstan-ignore-next-line
+    $codeCoverage->append($rawData, $testId, true, TestStatus::success());
 
     return serialize($codeCoverage);
 }

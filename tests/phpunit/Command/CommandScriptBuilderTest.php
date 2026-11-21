@@ -98,4 +98,25 @@ final class CommandScriptBuilderTest extends FileSystemTestCase
         self::assertFileContains('/Fixtures/Files/tester', $prependFile);
         self::assertFileContains('/Fixtures/Files/tester/tests/PlainTest.php', $prependFile);
     }
+
+    public function test_it_accepts_absolute_source_directories(): void
+    {
+        $fixtures = dirname(__DIR__) . '/Fixtures/Files';
+
+        $builder = new CommandScriptBuilder(
+            [$fixtures . '/tester/tests'],
+            $this->tmp,
+            $fixtures,
+            'junit.xml',
+            new Filesystem(),
+            new CommandLineBuilder(),
+            new PrependScriptGenerator(),
+        );
+
+        $setupScript = $builder->buildInitSetupScript();
+
+        // Infection >= 0.35.12 resolves source directories itself: they must not be dropped
+        self::assertFileContains("'" . $fixtures . "/tester/tests'", $setupScript);
+        self::assertFileContains($fixtures . '/tester/tests/PlainTest.php', $this->tmp . '/coverage_prepend.php');
+    }
 }
